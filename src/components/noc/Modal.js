@@ -52,6 +52,17 @@ export function Modal({ target, onClose }) {
   }
 
   const linkKey = target.linkKey
+  const allDown = rows.length > 0 && rows.every((r) => r.status === "down")
+
+  // Column widths: Location col only in "card" mode, Latency col dropped when every row is Down
+  const cols = [
+    target.kind === "card" ? "1fr" : null,
+    "1fr",
+    "1.3fr",
+    "0.8fr",
+    "0.7fr",
+    allDown ? null : "0.7fr",
+  ].filter(Boolean).join(" ")
 
   return (
     <div
@@ -93,14 +104,14 @@ export function Modal({ target, onClose }) {
               {/* Header row */}
               <div
                 className="grid gap-x-2 bg-slate-50 border-b border-slate-200 px-3 py-2"
-                style={{ gridTemplateColumns: target.kind === "card" ? "1fr 1fr 1.3fr 0.8fr 0.7fr 0.7fr" : "1fr 1.3fr 0.8fr 0.7fr 0.7fr" }}
+                style={{ gridTemplateColumns: cols }}
               >
                 {target.kind === "card" && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Location</span>}
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Operator</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">IP Address</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bandwidth</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Latency</span>
+                {!allDown && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Latency</span>}
               </div>
 
               {/* Data rows */}
@@ -109,7 +120,7 @@ export function Modal({ target, onClose }) {
                   key={i}
                   className={`grid gap-x-2 px-3 py-2.5 items-center border-b border-slate-100 last:border-0
                     ${i % 2 === 0 ? "bg-white" : "bg-slate-50/70"}`}
-                  style={{ gridTemplateColumns: target.kind === "card" ? "1fr 1fr 1.3fr 0.8fr 0.7fr 0.7fr" : "1fr 1.3fr 0.8fr 0.7fr 0.7fr" }}
+                  style={{ gridTemplateColumns: cols }}
                 >
                   {target.kind === "card" && (
                     <span className="text-xs font-bold text-slate-700 truncate">{r.location}</span>
@@ -118,12 +129,14 @@ export function Modal({ target, onClose }) {
                   <span className="text-xs font-mono text-slate-600 truncate">{r.ip}</span>
                   <span className="text-xs font-mono font-semibold text-slate-700">{r.bandwidth}</span>
                   <Chip s={r.status} />
-                  {r.status === "down" ? (
-                    <span className="text-xs text-slate-400">—</span>
-                  ) : (
-                    <span className="text-xs font-mono font-bold" style={{ color: r.status === "latency" ? S_COLOR.latency : S_COLOR.up }}>
-                      {r.latencyMs} ms
-                    </span>
+                  {!allDown && (
+                    r.status === "down" ? (
+                      <span className="text-xs text-slate-400">—</span>
+                    ) : (
+                      <span className="text-xs font-mono font-bold" style={{ color: r.status === "latency" ? S_COLOR.latency : S_COLOR.up }}>
+                        {r.latencyMs} ms
+                      </span>
+                    )
                   )}
                 </div>
               ))}

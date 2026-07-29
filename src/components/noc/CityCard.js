@@ -38,7 +38,7 @@ export function CityCard({ city, onLink }) {
               <div key={k} className="w-full flex items-center gap-1.5 px-1 py-0.5 rounded opacity-40">
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-slate-300" />
                 <span className="text-[10px] font-semibold flex-1 text-left truncate text-slate-400">
-                  {LINK_META[k].short}
+                  {k === "leaseline" ? LINK_META[k].label : LINK_META[k].short}
                 </span>
                 <span className="text-[9px] text-slate-300 leading-none flex-shrink-0">n/a</span>
               </div>
@@ -59,7 +59,7 @@ export function CityCard({ city, onLink }) {
                 ${link.status === "down" ? "text-red-600" : link.status === "latency" ? "text-amber-600" : "text-slate-500"}
                 group-hover:text-slate-700`}
               >
-                {LINK_META[k].short}{multi ? ` ×${link.providers.length}` : ""}
+                {k === "leaseline" ? LINK_META[k].label : LINK_META[k].short}{multi ? ` ×${link.providers.length}` : ""}
               </span>
               {link.status !== "up" && (
                 <span className="text-[9px] font-bold leading-none flex-shrink-0" style={{ color: S_COLOR[link.status] }}>

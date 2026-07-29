@@ -2,7 +2,7 @@
 
 export const LINK_META = {
   broadband: { label: "Office Broadband", short: "BB",  color: "#2563EB", bg: "#EFF6FF", pill: "#BFDBFE" },
-  ill:       { label: "Office ILL",       short: "ILL", color: "#7C3AED", bg: "#F5F3FF", pill: "#DDD6FE" },
+  leaseline: { label: "Lease Line",       short: "LL",  color: "#7C3AED", bg: "#F5F3FF", pill: "#DDD6FE" },
   mpls:      { label: "MPLS",             short: "MP",  color: "#D97706", bg: "#FFFBEB", pill: "#FDE68A" },
   cti:       { label: "CTI Internet",     short: "CTI", color: "#0D9488", bg: "#F0FDFA", pill: "#99F6E4" },
 }
@@ -26,7 +26,7 @@ export const CITIES = [
     "region": "Central",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -76,7 +76,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -106,7 +106,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -136,7 +136,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -166,7 +166,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "latency",
@@ -188,7 +188,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -210,7 +210,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -232,7 +232,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "latency",
         "providers": [
@@ -274,7 +274,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": {
+      "leaseline": {
         "status": "down",
         "providers": [
           {
@@ -336,7 +336,7 @@ export const CITIES = [
     "region": "Central",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -366,7 +366,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -396,7 +396,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -446,7 +446,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "latency",
         "providers": [
@@ -524,7 +524,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -594,7 +594,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": {
+      "leaseline": {
         "status": "latency",
         "providers": [
           {
@@ -636,7 +636,7 @@ export const CITIES = [
     "region": "Central",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -666,7 +666,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -696,7 +696,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "down",
         "providers": [
@@ -718,7 +718,7 @@ export const CITIES = [
     "region": "South",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "latency",
@@ -776,7 +776,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -838,7 +838,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -880,7 +880,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -902,7 +902,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -932,7 +932,7 @@ export const CITIES = [
     "region": "East",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "latency",
@@ -982,7 +982,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -1024,7 +1024,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1054,7 +1054,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -1076,7 +1076,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "latency",
@@ -1106,7 +1106,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "latency",
@@ -1148,7 +1148,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -1182,7 +1182,7 @@ export const CITIES = [
     "region": "South",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1232,7 +1232,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": {
+      "leaseline": {
         "status": "up",
         "providers": [
           {
@@ -1302,7 +1302,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1332,7 +1332,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1354,7 +1354,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -1384,7 +1384,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "latency",
@@ -1414,7 +1414,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1456,7 +1456,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -1510,7 +1510,7 @@ export const CITIES = [
           }
         ]
       },
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1532,7 +1532,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -1562,7 +1562,7 @@ export const CITIES = [
     "region": "East",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "latency",
@@ -1592,7 +1592,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1614,7 +1614,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -1636,7 +1636,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1658,7 +1658,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "up",
         "providers": [
@@ -1680,7 +1680,7 @@ export const CITIES = [
     "region": "West",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1710,7 +1710,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1740,7 +1740,7 @@ export const CITIES = [
     "region": "North",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": {
         "status": "down",
         "providers": [
@@ -1762,7 +1762,7 @@ export const CITIES = [
     "region": "Central",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1792,7 +1792,7 @@ export const CITIES = [
     "region": "South",
     "links": {
       "broadband": null,
-      "ill": null,
+      "leaseline": null,
       "mpls": null,
       "cti": {
         "status": "up",
@@ -1856,7 +1856,7 @@ export function mkAlert(city, link, status, ago) {
 }
 
 export const SEED = [
-  { id: 1, city: "Bangalore", link: "ill", status: "down", ts: "14:29", detail: "Office ILL lost" },
+  { id: 1, city: "Bangalore", link: "leaseline", status: "down", ts: "14:29", detail: "Lease Line lost" },
   { id: 2, city: "Hissar - STL", link: "mpls", status: "down", ts: "14:27", detail: "MPLS lost" },
   { id: 3, city: "Patna", link: "cti", status: "down", ts: "14:25", detail: "CTI Internet lost" },
   { id: 4, city: "Udaipur - HUB", link: "mpls", status: "down", ts: "14:23", detail: "MPLS lost" },
@@ -1869,7 +1869,7 @@ export const SEED = [
 ]
 
 export const LIVE_POOL = [
-  { city: "Delhi", link: "ill", status: "latency" },
+  { city: "Delhi", link: "leaseline", status: "latency" },
   { city: "Delhi", link: "mpls", status: "latency" },
   { city: "Hyderabad", link: "cti", status: "latency" },
   { city: "Jaipur", link: "broadband", status: "latency" },

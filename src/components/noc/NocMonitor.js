@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react"
-import { CITIES, LINK_META, CARD_STATS, T_ALL, T_UP, T_DOWN, SEED, LIVE_POOL, nextAlertId, REGIONS, STATUS_FILTERS, filterAndSortCities } from "./data"
+import { useState, useEffect } from "react"
+import { LINK_META, REGIONS, STATUS_FILTERS } from "./data"
+import { fetchTelemetrySummary, fetchCategoryMetrics, fetchStations, fetchLiveAlerts, subscribeToAlertStream } from "./api"
 import { AlertsPanel } from "./AlertsPanel"
 import { AlertsToggle } from "./AlertsToggle"
 import { MetricCard } from "./MetricCard"
@@ -10,31 +11,45 @@ import { Dropdown, GlobeIcon, ActivityIcon } from "./Dropdown"
 
 export default function NocMonitor() {
   const [alertsOpen, setAlertsOpen] = useState(false)
-  const [alerts, setAlerts] = useState(SEED)
+  const [alerts, setAlerts] = useState([])
+  const [summary, setSummary] = useState({ totalStations: 46, upLinks: 0, downLinks: 0, healthPercentage: 100 })
+  const [metrics, setMetrics] = useState([])
+  const [stations, setStations] = useState([])
   const [modal, setModal] = useState(null)
   const [activeCard, setActiveCard] = useState(null)
   const [regionFilter, setRegionFilter] = useState("All Regions")
   const [statusFilter, setStatusFilter] = useState("All Status")
-  const poolRef = useRef(0)
-  const visibleCities = useMemo(
-    () => filterAndSortCities(CITIES, regionFilter, statusFilter),
-    [regionFilter, statusFilter]
-  )
 
+  // Load telemetry summary & metrics
   useEffect(() => {
-    const id = setInterval(() => {
-      const item = LIVE_POOL[poolRef.current % LIVE_POOL.length]
-      poolRef.current++
-      const now = new Date()
-      const ts = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
-      setAlerts((prev) => [{
-        id: nextAlertId(), city: item.city, link: item.link, status: item.status, ts,
-        detail: item.status === "down" ? `${LINK_META[item.link].label} lost`
-          : item.status === "latency" ? `${LINK_META[item.link].label} high latency`
-          : `${LINK_META[item.link].label} recovered`,
-      }, ...prev.slice(0, 49)])
-    }, 5000)
-    return () => clearInterval(id)
+    async function loadSummaryData() {
+      const [sumData, metData, altData] = await Promise.all([
+        fetchTelemetrySummary(),
+        fetchCategoryMetrics(),
+        fetchLiveAlerts(),
+      ])
+      setSummary(sumData)
+      setMetrics(metData)
+      setAlerts(altData)
+    }
+    loadSummaryData()
+  }, [])
+
+  // Load stations on filter change
+  useEffect(() => {
+    async function loadStationData() {
+      const stnData = await fetchStations(regionFilter, statusFilter)
+      setStations(stnData)
+    }
+    loadStationData()
+  }, [regionFilter, statusFilter])
+
+  // Subscribe to live WebSocket alerts stream
+  useEffect(() => {
+    const unsubscribe = subscribeToAlertStream((newAlert) => {
+      setAlerts((prev) => [newAlert, ...prev.slice(0, 49)])
+    })
+    return () => unsubscribe()
   }, [])
 
   function onCardTab(key, tab) {
@@ -50,7 +65,6 @@ export default function NocMonitor() {
     setActiveCard(null)
   }
 
-  const health = Math.round((T_UP / T_ALL) * 100)
   const downCount = alerts.filter((a) => a.status === "down").length
 
   return (
@@ -72,19 +86,19 @@ export default function NocMonitor() {
               <span className="w-px h-5 bg-slate-200" />
               <div>
                 <p className="text-sm font-bold text-[#0F172A] leading-tight">Infrastructure Monitor</p>
-                <p className="text-[10px] text-slate-400">NOC Wallboard · PAN-India · {CITIES.length} Stations</p>
+                <p className="text-[10px] text-slate-400">NOC Wallboard · PAN-India · {summary.totalStations} Stations</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{T_UP} Up
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{summary.upLinks} Up
               </span>
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 border border-red-100 text-[11px] font-bold text-red-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />{T_DOWN} Down
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />{summary.downLinks} Down
               </span>
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold bg-emerald-50 border-emerald-100 text-emerald-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{health}% Healthy
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{summary.healthPercentage}% Healthy
               </span>
               <CalendarBtn />
             </div>
@@ -96,7 +110,7 @@ export default function NocMonitor() {
 
           {/* Metric cards row */}
           <div className="flex gap-3">
-            {CARD_STATS.map((stat) => (
+            {metrics.map((stat) => (
               <MetricCard
                 key={stat.key}
                 stat={stat}
@@ -109,7 +123,7 @@ export default function NocMonitor() {
           {/* Section divider */}
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
-              Global City Status — {visibleCities.length} Stations
+              Global City Status — {stations.length} Stations
             </span>
             <span className="flex-1 h-px bg-slate-200" />
 
@@ -122,8 +136,8 @@ export default function NocMonitor() {
 
           {/* 8-per-row city grid — worst stations (most Down, then Latency) show first */}
           <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(8, minmax(0, 1fr))" }}>
-            {visibleCities.length > 0 ? (
-              visibleCities.map((city) => (
+            {stations.length > 0 ? (
+              stations.map((city) => (
                 <CityCard key={city.name} city={city} onLink={onCityLink} />
               ))
             ) : (

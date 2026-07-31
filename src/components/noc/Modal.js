@@ -1,60 +1,53 @@
-import { useEffect } from "react"
-import { CITIES, LINK_META, S_COLOR } from "./data"
+import { useEffect, useState } from "react"
+import { LINK_META, S_COLOR } from "./data"
 import { Chip } from "./atoms"
+import { fetchStationLinkDetails, fetchCategoryReport } from "./api"
 
 export function Modal({ target, onClose }) {
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [title, setTitle] = useState("")
+  const [subtitle, setSubtitle] = useState("")
+
   useEffect(() => {
     const fn = (e) => { if (e.key === "Escape") onClose() }
     window.addEventListener("keydown", fn)
     return () => window.removeEventListener("keydown", fn)
   }, [onClose])
 
-  let title, subtitle, rows
-
-  if (target.kind === "cityLink") {
-    // Single station, single link type — list every provider serving it
-    const city = CITIES.find((c) => c.name === target.city)
-    const link = city.links[target.linkKey]
-    title = `${LINK_META[target.linkKey].label} — ${city.name}`
-    subtitle = `${link.providers.length} provider${link.providers.length !== 1 ? "s" : ""} · ${city.region} zone`
-    rows = link.providers.map((p) => ({
-      location: null,
-      operator: p.operator,
-      ip: p.ip,
-      bandwidth: p.bandwidth,
-      status: p.status,
-      latencyMs: p.latencyMs,
-      lastChecked: p.lastChecked,
-    }))
-  } else {
-    // Metric-card drill-down: every provider, at every station, matching this status
-    const linkKey = target.linkKey
-    rows = []
-    for (const city of CITIES) {
-      const link = city.links[linkKey]
-      if (!link) continue
-      for (const p of link.providers) {
-        if (p.status === target.tab) {
-          rows.push({
-            location: city.name,
+  useEffect(() => {
+    async function loadModalData() {
+      setLoading(true)
+      if (target.kind === "cityLink") {
+        const details = await fetchStationLinkDetails(target.city, target.linkKey)
+        setTitle(`${LINK_META[target.linkKey].label} — ${details.stationName || target.city}`)
+        setSubtitle(`${details.providers?.length || 0} provider${details.providers?.length !== 1 ? "s" : ""} · ${details.region || "Zone"} zone`)
+        setRows(
+          (details.providers || []).map((p) => ({
+            location: null,
             operator: p.operator,
             ip: p.ip,
             bandwidth: p.bandwidth,
             status: p.status,
             latencyMs: p.latencyMs,
             lastChecked: p.lastChecked,
-          })
-        }
+          }))
+        )
+      } else {
+        const reportRows = await fetchCategoryReport(target.linkKey, target.tab)
+        setTitle(`${LINK_META[target.linkKey].label} — ${target.tab === "down" ? "Down" : "Latency"} Report`)
+        setSubtitle(`${reportRows.length} link${reportRows.length !== 1 ? "s" : ""} affected`)
+        setRows(reportRows)
       }
+      setLoading(false)
     }
-    title = `${LINK_META[linkKey].label} — ${target.tab === "down" ? "Down" : "Latency"} Report`
-    subtitle = `${rows.length} link${rows.length !== 1 ? "s" : ""} affected`
-  }
+
+    loadModalData()
+  }, [target])
 
   const linkKey = target.linkKey
   const allDown = rows.length > 0 && rows.every((r) => r.status === "down")
 
-  // Column widths: Location col only in "card" mode, Latency col dropped when every row is Down
   const cols = [
     target.kind === "card" ? "1fr" : null,
     "1fr",
@@ -81,7 +74,7 @@ export function Modal({ target, onClose }) {
               {LINK_META[linkKey].short}
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-800">{title}</p>
+              <p className="text-sm font-bold text-slate-800">{title || "Loading..."}</p>
               <p className="text-[10px] text-slate-500 mt-px">{subtitle}</p>
             </div>
           </div>
@@ -97,7 +90,9 @@ export function Modal({ target, onClose }) {
 
         {/* Provider table */}
         <div className="px-5 py-4 overflow-y-auto">
-          {rows.length === 0 ? (
+          {loading ? (
+            <div className="py-8 text-center text-sm text-slate-400">Loading details from backend...</div>
+          ) : rows.length === 0 ? (
             <p className="text-center text-sm text-slate-400 py-8">No records to show.</p>
           ) : (
             <div className="rounded-xl border border-slate-200 overflow-hidden">

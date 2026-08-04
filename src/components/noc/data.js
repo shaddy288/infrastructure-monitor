@@ -24,12 +24,14 @@ export const STATUS_FILTERS = ["All Status", "Up", "Down", "Latency"];
 export function getLinkStatus(link) {
   if (!link) return null;
   if (link.providers && link.providers.length > 0) {
-    if (link.providers.every((p) => p.status === "down")) return "down";
+    if (link.providers.some((p) => p.status === "down")) return "down";
     if (link.providers.some((p) => p.status === "latency")) return "latency";
     return "up";
   }
   return link.status || "up";
 }
+
+
 
 
 export function cityDownCount(city) {

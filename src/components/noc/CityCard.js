@@ -78,6 +78,8 @@ export function CityCard({ city, onLink }) {
             </button>
           )
         })}
+
+
       </div>
     </div>
   )

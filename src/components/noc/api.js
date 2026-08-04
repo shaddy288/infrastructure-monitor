@@ -1,133 +1,106 @@
-import { CITIES, CARD_STATS, T_UP, T_DOWN, SEED, filterAndSortCities } from "./data";
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:5000/api/v1/alerts/stream";
 
 export async function fetchTelemetrySummary() {
-  try {
-    const res = await fetch(`${API_BASE}/telemetry/summary`);
-    if (!res.ok) throw new Error("API error");
-    return await res.json();
-  } catch (err) {
-    const totalAll = T_UP + T_DOWN;
-    return {
-      totalStations: CITIES.length,
-      totalLinks: totalAll,
-      upLinks: T_UP,
-      downLinks: T_DOWN,
-      healthPercentage: Math.round((T_UP / totalAll) * 100),
-      isFallback: true,
-    };
-  }
+  const res = await fetch(`${API_BASE}/telemetry/summary`);
+  if (!res.ok) throw new Error(`Server API error (${res.status}): Failed to fetch telemetry summary`);
+  return await res.json();
 }
 
 export async function fetchCategoryMetrics() {
-  try {
-    const res = await fetch(`${API_BASE}/telemetry/category-metrics`);
-    if (!res.ok) throw new Error("API error");
-    const data = await res.json();
-    return data.categories;
-  } catch (err) {
-    return CARD_STATS;
-  }
+  const res = await fetch(`${API_BASE}/telemetry/category-metrics`);
+  if (!res.ok) throw new Error(`Server API error (${res.status}): Failed to fetch category metrics`);
+  const data = await res.json();
+  return data.categories;
 }
 
 export async function fetchStations(region = "All Regions", status = "All Status") {
-  try {
-    const params = new URLSearchParams({ region, status });
-    const res = await fetch(`${API_BASE}/stations?${params}`);
-    if (!res.ok) throw new Error("API error");
-    const data = await res.json();
-    return data.stations;
-  } catch (err) {
-    return filterAndSortCities(CITIES, region, status);
-  }
+  const params = new URLSearchParams({ region, status });
+  const res = await fetch(`${API_BASE}/stations?${params}`);
+  if (!res.ok) throw new Error(`Server API error (${res.status}): Failed to fetch stations`);
+  const data = await res.json();
+  return data.stations;
 }
 
 export async function fetchLiveAlerts() {
-  try {
-    const res = await fetch(`${API_BASE}/alerts/live`);
-    if (!res.ok) throw new Error("API error");
-    const data = await res.json();
-    return data.alerts;
-  } catch (err) {
-    return SEED;
-  }
+  const res = await fetch(`${API_BASE}/alerts/live`);
+  if (!res.ok) throw new Error(`Server API error (${res.status}): Failed to fetch live alerts`);
+  const data = await res.json();
+  return data.alerts;
 }
 
 export async function fetchStationLinkDetails(stationName, linkKey) {
-  try {
-    const res = await fetch(`${API_BASE}/stations/${encodeURIComponent(stationName)}/links/${linkKey}`);
-    if (!res.ok) throw new Error("API error");
-    return await res.json();
-  } catch (err) {
-    const city = CITIES.find((c) => c.name === stationName);
-    const link = city?.links[linkKey];
-    return {
-      stationName,
-      region: city?.region || "",
-      linkKey,
-      providers: link?.providers || [],
-    };
+  const res = await fetch(`${API_BASE}/stations/${encodeURIComponent(stationName)}/links/${linkKey}`);
+  if (!res.ok) {
+    if (res.status === 404) {
+      return { stationName, region: "Zone", linkKey, providers: [] };
+    }
+    throw new Error(`Server API error (${res.status}): Failed to fetch station link details`);
   }
+  return await res.json();
 }
+
 
 export async function fetchCategoryReport(linkKey, status) {
-  try {
-    const params = new URLSearchParams({ linkKey, status });
-    const res = await fetch(`${API_BASE}/reports/links?${params}`);
-    if (!res.ok) throw new Error("API error");
-    const data = await res.json();
-    return data.records;
-  } catch (err) {
-    const rows = [];
-    for (const city of CITIES) {
-      const link = city.links[linkKey];
-      if (!link) continue;
-      for (const p of link.providers) {
-        if (p.status === status) {
-          rows.push({
-            location: city.name,
-            operator: p.operator,
-            ip: p.ip,
-            bandwidth: p.bandwidth,
-            status: p.status,
-            latencyMs: p.latencyMs,
-            lastChecked: p.lastChecked,
-          });
-        }
-      }
-    }
-    return rows;
-  }
+  const params = new URLSearchParams({ linkKey, status });
+  const res = await fetch(`${API_BASE}/reports/links?${params}`);
+  if (!res.ok) throw new Error(`Server API error (${res.status}): Failed to fetch category report`);
+  const data = await res.json();
+  return data.records;
 }
 
-export function subscribeToAlertStream(onAlertReceived) {
-  let ws;
-  try {
-    ws = new WebSocket(WS_BASE);
+export function subscribeToAlertStream(onAlertReceived, onError) {
+  let ws = null;
+  let reconnectTimer = null;
+  let isUnmounted = false;
 
-    ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        if (payload.event === "alert_event" && payload.data) {
-          onAlertReceived(payload.data);
+  function connect() {
+    if (isUnmounted) return;
+
+    try {
+      ws = new WebSocket(WS_BASE);
+
+      ws.onopen = () => {
+        console.log('[WebSocket] Connected to alert stream');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.event === "alert_event" && payload.data) {
+            onAlertReceived(payload.data);
+          }
+        } catch (e) {
+          // ignore parse error
         }
-      } catch (e) {
-        // ignore parse error
-      }
-    };
+      };
 
-    ws.onerror = () => {
-      ws?.close();
-    };
-  } catch (err) {
-    // WebSocket connection failed
+      ws.onerror = (err) => {
+        if (onError) onError(err);
+      };
+
+      ws.onclose = () => {
+        if (!isUnmounted) {
+          reconnectTimer = setTimeout(connect, 3000);
+        }
+      };
+    } catch (err) {
+      if (!isUnmounted) {
+        reconnectTimer = setTimeout(connect, 5000);
+      }
+    }
   }
 
+  connect();
+
   return () => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.close();
+    isUnmounted = true;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    if (ws) {
+      ws.onclose = null;
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
     }
   };
 }

@@ -18,32 +18,43 @@ export function Modal({ target, onClose }) {
   useEffect(() => {
     async function loadModalData() {
       setLoading(true)
-      if (target.kind === "cityLink") {
-        const details = await fetchStationLinkDetails(target.city, target.linkKey)
-        setTitle(`${LINK_META[target.linkKey].label} — ${details.stationName || target.city}`)
-        setSubtitle(`${details.providers?.length || 0} provider${details.providers?.length !== 1 ? "s" : ""} · ${details.region || "Zone"} zone`)
-        setRows(
-          (details.providers || []).map((p) => ({
-            location: null,
-            operator: p.operator,
-            ip: p.ip,
-            bandwidth: p.bandwidth,
-            status: p.status,
-            latencyMs: p.latencyMs,
-            lastChecked: p.lastChecked,
-          }))
-        )
-      } else {
-        const reportRows = await fetchCategoryReport(target.linkKey, target.tab)
-        setTitle(`${LINK_META[target.linkKey].label} — ${target.tab === "down" ? "Down" : "Latency"} Report`)
-        setSubtitle(`${reportRows.length} link${reportRows.length !== 1 ? "s" : ""} affected`)
-        setRows(reportRows)
+      try {
+        if (target.kind === "cityLink") {
+          const details = await fetchStationLinkDetails(target.city, target.linkKey)
+          const categoryLabel = details.subType ? `${LINK_META[target.linkKey].label} (${details.subType})` : LINK_META[target.linkKey].label
+          setTitle(`${categoryLabel} — ${details.stationName || target.city}`)
+          setSubtitle(`${details.providers?.length || 0} provider${details.providers?.length !== 1 ? "s" : ""} · ${details.region || "Zone"} zone`)
+
+
+          setRows(
+            (details.providers || []).map((p) => ({
+              location: null,
+              operator: p.operator,
+              ip: p.ip,
+              bandwidth: p.bandwidth,
+              status: p.status,
+              latencyMs: p.latencyMs,
+              lastChecked: p.lastChecked,
+            }))
+          )
+        } else {
+          const reportRows = await fetchCategoryReport(target.linkKey, target.tab)
+          setTitle(`${LINK_META[target.linkKey].label} — ${target.tab === "down" ? "Down" : "Latency"} Report`)
+          setSubtitle(`${reportRows.length} link${reportRows.length !== 1 ? "s" : ""} affected`)
+          setRows(reportRows)
+        }
+      } catch (err) {
+        setTitle("Backend Server Error")
+        setSubtitle("Unable to load data from NOC backend")
+        setRows([])
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     loadModalData()
   }, [target])
+
 
   const linkKey = target.linkKey
   const allDown = rows.length > 0 && rows.every((r) => r.status === "down")
@@ -56,6 +67,36 @@ export function Modal({ target, onClose }) {
     "0.7fr",
     allDown ? null : "0.7fr",
   ].filter(Boolean).join(" ")
+
+  function exportModalCsv() {
+    if (rows.length === 0) return
+    const csvLines = [
+      `Radio City NOC - ${title}`,
+      `Generated At: ${new Date().toLocaleString()}`,
+      `Summary: ${subtitle}`,
+      "",
+      target.kind === "card" ? "REPORT DATE,LOCATION,OPERATOR,IP ADDRESS,BANDWIDTH,STATUS,LATENCY (MS),DOWN TIME" : "REPORT DATE,OPERATOR,IP ADDRESS,BANDWIDTH,STATUS,LATENCY (MS),DOWN TIME",
+      ...rows.map((r) => {
+        const latStr = r.status === "down" ? "N/A" : `${r.latencyMs || 0} ms`
+        const dtStr = r.downTime || r.down_time || (r.status === "down" ? "5 mins" : "N/A")
+
+        const todayStr = r.date || new Date().toISOString().split("T")[0]
+        return target.kind === "card"
+          ? `"${todayStr}","${r.location || title}","${r.operator || "-"}","${r.ip || "-"}","${r.bandwidth || "-"}","${(r.status || "up").toUpperCase()}","${latStr}","${dtStr}"`
+          : `"${todayStr}","${r.operator || "-"}","${r.ip || "-"}","${r.bandwidth || "-"}","${(r.status || "up").toUpperCase()}","${latStr}","${dtStr}"`
+      }),
+    ].join("\n")
+
+
+
+
+    const blobContent = "\uFEFF" + csvLines
+    const a = document.createElement("a")
+    a.href = URL.createObjectURL(new Blob([blobContent], { type: "text/csv;charset=utf-8;" }))
+    a.download = `noc-modal-report-${linkKey}.csv`
+    a.click()
+  }
+
 
   return (
     <div
@@ -140,8 +181,20 @@ export function Modal({ target, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center px-5 py-2.5 border-t border-slate-100 bg-slate-50 flex-shrink-0">
+        <div className="flex items-center px-5 py-2.5 border-t border-slate-100 bg-slate-50 flex-shrink-0 gap-2">
           <span className="text-[10px] text-slate-400 mr-auto">Press Esc or click outside to dismiss</span>
+          {rows.length > 0 && (
+            <button
+              onClick={exportModalCsv}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+                <path d="M5 1v5M2.5 4L5 6.5 7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M1 8.5h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+              Export CSV
+            </button>
+          )}
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#0F172A] text-white hover:bg-slate-700 transition-colors cursor-pointer"

@@ -1,9 +1,9 @@
-import { LINK_KEYS, LINK_META, S_COLOR } from "./data"
+import { LINK_KEYS, LINK_META, S_COLOR, getLinkStatus } from "./data"
 
 export function CityCard({ city, onLink }) {
   const present = LINK_KEYS.map((k) => city.links[k]).filter(Boolean)
-  const isDown = present.some((l) => l.status === "down")
-  const isLatency = !isDown && present.some((l) => l.status === "latency")
+  const isDown = present.some((l) => getLinkStatus(l) === "down")
+  const isLatency = !isDown && present.some((l) => getLinkStatus(l) === "latency")
 
   return (
     <div
@@ -45,7 +45,15 @@ export function CityCard({ city, onLink }) {
             )
           }
 
+          const status = getLinkStatus(link)
           const multi = link.providers.length > 1
+          const activeProvider = link.providers.find((p) => p.status === status) || link.providers[0]
+
+          const labelText = link.subType
+            ? `${LINK_META[k].short} - ${link.subType}`
+            : k === "leaseline"
+            ? LINK_META[k].label
+            : LINK_META[k].short
 
           return (
             <button
@@ -53,17 +61,18 @@ export function CityCard({ city, onLink }) {
               onClick={() => onLink(city, k)}
               className="w-full flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-slate-50 cursor-pointer transition-colors group"
             >
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: S_COLOR[link.status] }} />
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: S_COLOR[status] }} />
               <span
                 className={`text-[10px] font-semibold flex-1 text-left truncate
-                ${link.status === "down" ? "text-red-600" : link.status === "latency" ? "text-amber-600" : "text-slate-500"}
+                ${status === "down" ? "text-red-600" : status === "latency" ? "text-amber-600" : "text-slate-500"}
                 group-hover:text-slate-700`}
               >
-                {k === "leaseline" ? LINK_META[k].label : LINK_META[k].short}{multi ? ` ×${link.providers.length}` : ""}
+                {labelText}{multi ? ` ×${link.providers.length}` : ""}
               </span>
-              {link.status !== "up" && (
-                <span className="text-[9px] font-bold leading-none flex-shrink-0" style={{ color: S_COLOR[link.status] }}>
-                  {link.status === "latency" ? `${link.providers[0].latencyMs}ms` : "✕"}
+
+              {status !== "up" && (
+                <span className="text-[9px] font-bold leading-none flex-shrink-0" style={{ color: S_COLOR[status] }}>
+                  {status === "latency" ? `${activeProvider?.latencyMs || 0}ms` : "✕"}
                 </span>
               )}
             </button>
@@ -72,4 +81,4 @@ export function CityCard({ city, onLink }) {
       </div>
     </div>
   )
-}
+}

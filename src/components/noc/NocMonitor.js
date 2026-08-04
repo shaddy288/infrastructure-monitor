@@ -12,36 +12,56 @@ import { Dropdown, GlobeIcon, ActivityIcon } from "./Dropdown"
 export default function NocMonitor() {
   const [alertsOpen, setAlertsOpen] = useState(false)
   const [alerts, setAlerts] = useState([])
-  const [summary, setSummary] = useState({ totalStations: 46, upLinks: 0, downLinks: 0, healthPercentage: 100 })
+  const [summary, setSummary] = useState({ totalStations: 0, upLinks: 0, downLinks: 0, healthPercentage: 100 })
   const [metrics, setMetrics] = useState([])
   const [stations, setStations] = useState([])
   const [modal, setModal] = useState(null)
   const [activeCard, setActiveCard] = useState(null)
   const [regionFilter, setRegionFilter] = useState("All Regions")
   const [statusFilter, setStatusFilter] = useState("All Status")
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  // Load telemetry summary & metrics
-  useEffect(() => {
-    async function loadSummaryData() {
-      const [sumData, metData, altData] = await Promise.all([
+  async function loadInitialData() {
+    setLoading(true)
+    setError(null)
+    try {
+      const [sumData, metData, altData, stnData] = await Promise.all([
         fetchTelemetrySummary(),
         fetchCategoryMetrics(),
         fetchLiveAlerts(),
+        fetchStations(regionFilter, statusFilter),
       ])
       setSummary(sumData)
       setMetrics(metData)
       setAlerts(altData)
+      setStations(stnData)
+    } catch (err) {
+      console.error("NOC Server Connection Error:", err)
+      setError("Unable to connect to NOC Backend Server (http://localhost:5000). Please check if the server is running.")
+    } finally {
+      setLoading(false)
     }
-    loadSummaryData()
+  }
+
+  // Initial load
+  useEffect(() => {
+    loadInitialData()
   }, [])
 
-  // Load stations on filter change
+  // Reload stations on filter change
   useEffect(() => {
     async function loadStationData() {
-      const stnData = await fetchStations(regionFilter, statusFilter)
-      setStations(stnData)
+      try {
+        const stnData = await fetchStations(regionFilter, statusFilter)
+        setStations(stnData)
+      } catch (err) {
+        setError("Unable to fetch station data from NOC Backend Server.")
+      }
     }
-    loadStationData()
+    if (!loading) {
+      loadStationData()
+    }
   }, [regionFilter, statusFilter])
 
   // Subscribe to live WebSocket alerts stream
@@ -51,6 +71,8 @@ export default function NocMonitor() {
     })
     return () => unsubscribe()
   }, [])
+
+
 
   function onCardTab(key, tab) {
     if (activeCard?.key === key && activeCard?.tab === tab) {
@@ -100,13 +122,33 @@ export default function NocMonitor() {
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold bg-emerald-50 border-emerald-100 text-emerald-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{summary.healthPercentage}% Healthy
               </span>
-              <CalendarBtn />
+              <CalendarBtn stations={stations} alerts={alerts} />
+
             </div>
           </div>
         </header>
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+          {/* Server Error Alert Banner */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between gap-4 shadow-sm animate-[fadeDown_150ms_ease-out]">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 font-bold">⚠️</span>
+                <div>
+                  <p className="text-xs font-bold text-red-800">Backend Server Error</p>
+                  <p className="text-xs text-red-600">{error}</p>
+                </div>
+              </div>
+              <button
+                onClick={loadInitialData}
+                className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                Retry Connection
+              </button>
+            </div>
+          )}
 
           {/* Metric cards row */}
           <div className="flex gap-3">
@@ -142,12 +184,13 @@ export default function NocMonitor() {
               ))
             ) : (
               <div className="col-span-8 py-10 text-center text-sm text-slate-400">
-                No stations match this filter.
+                {loading ? "Loading data from backend server..." : "No stations match this filter."}
               </div>
             )}
           </div>
         </div>
       </div>
+
 
       {/* ── Collapsible alerts panel (right side) ── */}
       <AlertsPanel alerts={alerts} open={alertsOpen} />

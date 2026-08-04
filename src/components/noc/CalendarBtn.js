@@ -1,7 +1,7 @@
 import { useState } from "react"
-import { CITIES, LINK_KEYS, LINK_META } from "./data"
+import { LINK_KEYS, LINK_META } from "./data"
 
-export function CalendarBtn() {
+export function CalendarBtn({ stations = [], alerts = [] }) {
   const MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
   const DN = ["Su","Mo","Tu","We","Th","Fr","Sa"]
   const td = new Date()
@@ -28,25 +28,77 @@ export function CalendarBtn() {
     if (!rs || (rs && re)) { setRs(d); setRe(null) }
     else { d < rs ? (setRe(rs), setRs(d)) : setRe(d) }
   }
-  function dl() {
-    if (!rs) return
-    const fr = fmt(rs), to = re ? fmt(re) : fr
-    const csv = [
-      "NOC Report", `Period: ${fr} – ${to}`, "",
-      "LOCATION,ZONE,LINK,OPERATOR,IP,BANDWIDTH,STATUS,LATENCY",
-      ...CITIES.flatMap((c) => LINK_KEYS.flatMap((k) => {
-        const link = c.links[k]
-        if (!link) return []
-        return link.providers.map((p) =>
-          `${c.name},${c.region},${LINK_META[k].label},${p.operator},${p.ip},${p.bandwidth},${p.status},${p.status === "down" ? "—" : p.latencyMs}`
-        )
+
+  // Preset Date Selection Helpers
+  function selectPreset(daysAgo) {
+    const end = new Date()
+    const start = new Date()
+    if (daysAgo > 0) {
+      start.setDate(end.getDate() - daysAgo)
+    }
+    setRs(start)
+    setRe(end)
+    setVm(end.getMonth())
+    setVy(end.getFullYear())
+  }
+
+  function generateCsv() {
+    const fr = rs ? fmt(rs) : fmt(td)
+    const to = re ? fmt(re) : fr
+
+    // Calculate Summary Counts
+    let downCount = 0
+    let latencyCount = 0
+    stations.forEach((c) => {
+      LINK_KEYS.forEach((k) => {
+        const link = c.links?.[k]
+        if (!link || !link.providers) return
+        link.providers.forEach((p) => {
+          if (p.status === "down") downCount++
+          if (p.status === "latency") latencyCount++
+        })
+      })
+    })
+
+    const csvLines = [
+      "Radio City NOC - Infrastructure Monitoring & Downtime Report",
+      `Period: ${fr} to ${to}`,
+      `Generated At: ${new Date().toLocaleString()}`,
+      `Summary: ${stations.length} Stations Evaluated | ${downCount} Down Links | ${latencyCount} High Latency Links`,
+      "",
+      "REPORT DATE,STATION,ZONE,LINK CATEGORY,ISP OPERATOR,IP ADDRESS,BANDWIDTH,STATUS,LATENCY (MS),DOWN TIME",
+      ...stations.flatMap((c) => LINK_KEYS.flatMap((k) => {
+        const link = c.links?.[k]
+        if (!link || !link.providers) return []
+        return link.providers.map((p) => {
+          const latencyStr = p.status === "down" ? "N/A" : `${p.latencyMs || 0} ms`
+          const downTimeStr = p.downTime || p.down_time || (p.status === "down" ? "5 mins" : "N/A")
+
+          const ipVal = p.ip || p.ip_address || "-"
+          const bwVal = p.bandwidth || "-"
+          const opVal = p.operator || "-"
+          let rawDate = p.date || fr
+          if (rawDate && rawDate.includes("/")) {
+            const pts = rawDate.split("/")
+            if (pts.length === 3) rawDate = `${pts[2]}-${pts[1].padStart(2, "0")}-${pts[0].padStart(2, "0")}`
+          }
+          const recordDate = rawDate || new Date().toISOString().split("T")[0]
+          return `"${recordDate}","${c.name}","${c.region}","${LINK_META[k].label}","${opVal}","${ipVal}","${bwVal}","${p.status.toUpperCase()}","${latencyStr}","${downTimeStr}"`
+        })
       })),
     ].join("\n")
+
+
+
+
+    // Prepend \\uFEFF (UTF-8 BOM) so Microsoft Excel opens character encoding cleanly without "â€”"
+    const blobContent = "\uFEFF" + csvLines
     const a = document.createElement("a")
-    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }))
-    a.download = `noc-${fr.replace(/\//g, "-")}-to-${to.replace(/\//g, "-")}.csv`
+    a.href = URL.createObjectURL(new Blob([blobContent], { type: "text/csv;charset=utf-8;" }))
+    a.download = `noc-downtime-report-${fr.replace(/\//g, "-")}-to-${to.replace(/\//g, "-")}.csv`
     a.click()
     setOpen(false)
+
   }
 
   const off = fd(vy, vm), tot = dim(vy, vm)
@@ -58,6 +110,7 @@ export function CalendarBtn() {
         onClick={() => setOpen((o) => !o)}
         className={`w-8 h-8 rounded-lg border flex items-center justify-center cursor-pointer transition-all
           ${open ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600"}`}
+        title="Generate & Export Downtime Report"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
@@ -71,9 +124,16 @@ export function CalendarBtn() {
 
       {open && (
         <div
-          className="absolute right-0 top-10 z-50 bg-white rounded-xl border border-slate-200 shadow-xl w-68 overflow-hidden animate-[modalIn_150ms_ease-out]"
-          style={{ width: "272px" }}
+          className="absolute right-0 top-10 z-50 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-[modalIn_150ms_ease-out]"
+          style={{ width: "280px" }}
         >
+          {/* Preset buttons row */}
+          <div className="flex gap-1 p-2 bg-slate-50 border-b border-slate-100 text-[10px]">
+            <button onClick={() => selectPreset(0)} className="flex-1 py-1 rounded bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 cursor-pointer">Today</button>
+            <button onClick={() => selectPreset(7)} className="flex-1 py-1 rounded bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 cursor-pointer">Last 7 Days</button>
+            <button onClick={() => selectPreset(30)} className="flex-1 py-1 rounded bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 cursor-pointer">Last 30 Days</button>
+          </div>
+
           <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100">
             <button onClick={pm} className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 cursor-pointer">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M7 2L3 5l4 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -83,6 +143,7 @@ export function CalendarBtn() {
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           </div>
+
           <div className="px-3 py-2">
             <div className="grid grid-cols-7 mb-1">
               {DN.map((d) => <span key={d} className="text-center text-[9px] font-bold text-slate-400 py-0.5">{d}</span>)}
@@ -107,6 +168,7 @@ export function CalendarBtn() {
               })}
             </div>
           </div>
+
           <div className="border-t border-slate-100 px-3 py-2.5 space-y-2">
             <div className="flex gap-1.5 text-[10px]">
               <div className="flex-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg font-mono text-slate-700">
@@ -124,10 +186,8 @@ export function CalendarBtn() {
                 Clear
               </button>
               <button
-                onClick={dl}
-                disabled={!rs}
-                className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1
-                  ${rs ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer" : "bg-slate-100 text-slate-400 cursor-not-allowed"}`}
+                onClick={generateCsv}
+                className="flex-1 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors shadow-sm"
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <path d="M5 1v5M2.5 4L5 6.5 7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -141,4 +201,4 @@ export function CalendarBtn() {
       )}
     </div>
   )
-}
+}

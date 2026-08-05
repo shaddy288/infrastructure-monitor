@@ -93,7 +93,21 @@ export function Modal({ target, onClose }) {
       target.kind === "card" ? "REPORT DATE,LOCATION,OPERATOR,IP ADDRESS,BANDWIDTH,STATUS,LATENCY (MS),DOWN TIME" : "REPORT DATE,OPERATOR,IP ADDRESS,BANDWIDTH,STATUS,LATENCY (MS),DOWN TIME",
       ...rows.map((r) => {
         const latStr = r.status === "down" ? "N/A" : `${r.latencyMs || 0} ms`
-        const dtStr = r.downTime || r.down_time || (r.status === "down" ? "5 mins" : "N/A")
+        let dtStr = r.downTime || r.down_time
+        if (!dtStr || dtStr === "5 mins") {
+          if (r.status === "down") {
+            const downSince = r.downSince || r.down_since
+            if (downSince) {
+              const ms = Date.now() - new Date(downSince).getTime()
+              const mins = Math.max(0, Math.round(ms / 60000))
+              dtStr = mins < 1 ? "< 1 min" : mins < 60 ? `${mins} mins` : `${Math.floor(mins / 60)} hr ${mins % 60} mins`
+            } else {
+              dtStr = "< 1 min"
+            }
+          } else {
+            dtStr = "N/A"
+          }
+        }
 
         const todayStr = r.date || new Date().toISOString().split("T")[0]
         return target.kind === "card"

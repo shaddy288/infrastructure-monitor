@@ -78,13 +78,64 @@ export default function NocMonitor() {
     }
   }, [regionFilter, statusFilter])
 
-  // Subscribe to live WebSocket alerts stream
+  // Subscribe to live WebSocket alerts & telemetry stream
   useEffect(() => {
-    const unsubscribe = subscribeToAlertStream((newAlert) => {
-      setAlerts((prev) => [newAlert, ...prev.slice(0, 49)])
+    const unsubscribe = subscribeToAlertStream({
+      onAlert: (newAlert) => {
+        setAlerts((prev) => [newAlert, ...prev.slice(0, 49)])
+      },
+      onSnapshot: (data) => {
+        if (data.summary) setSummary(data.summary)
+        if (data.categories) setMetrics(data.categories)
+        if (data.stations) {
+          if (regionFilter === "All Regions" && statusFilter === "All Status") {
+            setStations(data.stations)
+          } else {
+            // Apply active filters in-memory
+            setStations(data.stations.filter((s) => {
+              if (regionFilter !== "All Regions" && s.region !== regionFilter) return false;
+              if (statusFilter === "Down") {
+                return Object.values(s.links || {}).some((l) => l && l.status === "down");
+              }
+              if (statusFilter === "Latency") {
+                return Object.values(s.links || {}).some((l) => l && l.status === "latency");
+              }
+              if (statusFilter === "Up") {
+                return Object.values(s.links || {}).some((l) => l && (l.status === "down" || l.status === "latency"));
+              }
+              return true;
+            }));
+          }
+        }
+      },
+      onTelemetryUpdate: (data) => {
+        if (data.summary) setSummary(data.summary)
+        if (data.categories) setMetrics(data.categories)
+      },
+      onStationsUpdate: (newStations) => {
+        if (newStations) {
+          if (regionFilter === "All Regions" && statusFilter === "All Status") {
+            setStations(newStations)
+          } else {
+            setStations(newStations.filter((s) => {
+              if (regionFilter !== "All Regions" && s.region !== regionFilter) return false;
+              if (statusFilter === "Down") {
+                return Object.values(s.links || {}).some((l) => l && l.status === "down");
+              }
+              if (statusFilter === "Latency") {
+                return Object.values(s.links || {}).some((l) => l && l.status === "latency");
+              }
+              if (statusFilter === "Up") {
+                return Object.values(s.links || {}).some((l) => l && (l.status === "down" || l.status === "latency"));
+              }
+              return true;
+            }));
+          }
+        }
+      },
     })
     return () => unsubscribe()
-  }, [])
+  }, [regionFilter, statusFilter])
 
 
 

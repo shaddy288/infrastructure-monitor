@@ -49,10 +49,14 @@ export async function fetchCategoryReport(linkKey, status) {
   return data.records;
 }
 
-export function subscribeToAlertStream(onAlertReceived, onError) {
+export function subscribeToAlertStream(optionsOrOnAlert, onError) {
   let ws = null;
   let reconnectTimer = null;
   let isUnmounted = false;
+
+  const callbacks = typeof optionsOrOnAlert === 'function'
+    ? { onAlert: optionsOrOnAlert, onError }
+    : (optionsOrOnAlert || {});
 
   function connect() {
     if (isUnmounted) return;
@@ -61,14 +65,33 @@ export function subscribeToAlertStream(onAlertReceived, onError) {
       ws = new WebSocket(WS_BASE);
 
       ws.onopen = () => {
-        console.log('[WebSocket] Connected to alert stream');
+        console.log('[WebSocket] Connected to NOC Live Telemetry Stream');
       };
 
       ws.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          if (payload.event === "alert_event" && payload.data) {
-            onAlertReceived(payload.data);
+          const { event: evtType, data } = payload;
+
+          if (evtType === 'alert_event' && data && callbacks.onAlert) {
+            callbacks.onAlert(data);
+          } else if (evtType === 'initial_snapshot' && data && callbacks.onSnapshot) {
+            callbacks.onSnapshot(data);
+          } else if (evtType === 'telemetry_update' && data && callbacks.onTelemetryUpdate) {
+            callbacks.onTelemetryUpdate(data);
+          } else if (evtType === 'stations_update' && data && callbacks.onStationsUpdate) {
+            callbacks.onStationsUpdate(data.stations);
+          } else if (evtType === 'full_update' && data) {
+            if (callbacks.onSnapshot) {
+              callbacks.onSnapshot(data);
+            } else {
+              if (data.summary && callbacks.onTelemetryUpdate) {
+                callbacks.onTelemetryUpdate({ summary: data.summary, categories: data.categories });
+              }
+              if (data.stations && callbacks.onStationsUpdate) {
+                callbacks.onStationsUpdate(data.stations);
+              }
+            }
           }
         } catch (e) {
           // ignore parse error
@@ -76,7 +99,7 @@ export function subscribeToAlertStream(onAlertReceived, onError) {
       };
 
       ws.onerror = (err) => {
-        if (onError) onError(err);
+        if (callbacks.onError) callbacks.onError(err);
       };
 
       ws.onclose = () => {

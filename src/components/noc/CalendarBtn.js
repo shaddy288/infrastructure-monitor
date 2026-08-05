@@ -72,7 +72,21 @@ export function CalendarBtn({ stations = [], alerts = [] }) {
         if (!link || !link.providers) return []
         return link.providers.map((p) => {
           const latencyStr = p.status === "down" ? "N/A" : `${p.latencyMs || 0} ms`
-          const downTimeStr = p.downTime || p.down_time || (p.status === "down" ? "5 mins" : "N/A")
+          let downTimeStr = p.downTime || p.down_time
+          if (!downTimeStr || downTimeStr === "5 mins") {
+            if (p.status === "down") {
+              const downSince = p.downSince || p.down_since
+              if (downSince) {
+                const ms = Date.now() - new Date(downSince).getTime()
+                const mins = Math.max(0, Math.round(ms / 60000))
+                downTimeStr = mins < 1 ? "< 1 min" : mins < 60 ? `${mins} mins` : `${Math.floor(mins / 60)} hr ${mins % 60} mins`
+              } else {
+                downTimeStr = "< 1 min"
+              }
+            } else {
+              downTimeStr = "N/A"
+            }
+          }
 
           const ipVal = p.ip || p.ip_address || "-"
           const bwVal = p.bandwidth || "-"

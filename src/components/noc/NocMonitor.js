@@ -83,9 +83,10 @@ export default function NocMonitor() {
   }
 
   function onCityLink(city, key) {
-    setModal({ kind: "cityLink", city: city.name, linkKey: key })
+    setModal({ kind: "cityLink", city: city.name, linkKey: key, cityData: city })
     setActiveCard(null)
   }
+
 
   const downCount = alerts.filter((a) => a.status === "down").length
 

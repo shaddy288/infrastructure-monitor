@@ -20,11 +20,23 @@ export function Modal({ target, onClose }) {
       setLoading(true)
       try {
         if (target.kind === "cityLink") {
-          const details = await fetchStationLinkDetails(target.city, target.linkKey)
+          let details = null
+          const linkObj = target.cityData?.links?.[target.linkKey]
+
+          if (linkObj && linkObj.providers) {
+            details = {
+              stationName: target.cityData.name || target.city,
+              region: target.cityData.region,
+              subType: linkObj.subType,
+              providers: linkObj.providers,
+            }
+          } else {
+            details = await fetchStationLinkDetails(target.city, target.linkKey)
+          }
+
           const categoryLabel = details.subType ? `${LINK_META[target.linkKey].label} (${details.subType})` : LINK_META[target.linkKey].label
           setTitle(`${categoryLabel} — ${details.stationName || target.city}`)
           setSubtitle(`${details.providers?.length || 0} provider${details.providers?.length !== 1 ? "s" : ""} · ${details.region || "Zone"} zone`)
-
 
           setRows(
             (details.providers || []).map((p) => ({
@@ -37,7 +49,8 @@ export function Modal({ target, onClose }) {
               lastChecked: p.lastChecked,
             }))
           )
-        } else {
+        }
+ else {
           const reportRows = await fetchCategoryReport(target.linkKey, target.tab)
           setTitle(`${LINK_META[target.linkKey].label} — ${target.tab === "down" ? "Down" : "Latency"} Report`)
           setSubtitle(`${reportRows.length} link${reportRows.length !== 1 ? "s" : ""} affected`)

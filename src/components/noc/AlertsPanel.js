@@ -27,9 +27,10 @@ export function AlertsPanel({ alerts, open }) {
         <div ref={topRef} className="flex-1 overflow-y-auto divide-y divide-slate-100">
           {alerts.map((a, i) => (
             <div
-              key={a.id}
+              key={a.id ? `${a.id}-${i}` : i}
               className={`px-3 py-2.5 hover:bg-slate-50 transition-colors ${i === 0 ? "animate-[fadeDown_280ms_ease-out]" : ""}`}
             >
+
               <div className="flex items-start justify-between gap-1 mb-1">
                 <span className="text-[11px] font-bold text-slate-800 leading-tight">{a.city}</span>
                 <span className="text-[10px] text-slate-400 font-mono flex-shrink-0 mt-px">{a.ts}</span>

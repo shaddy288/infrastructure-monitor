@@ -34,7 +34,8 @@ export function Modal({ target, onClose }) {
             details = await fetchStationLinkDetails(target.city, target.linkKey)
           }
 
-          const categoryLabel = details.subType ? `${LINK_META[target.linkKey].label} (${details.subType})` : LINK_META[target.linkKey].label
+          const meta = LINK_META[target?.linkKey] || { label: target?.linkKey || "Network", short: "NET", color: "#3B82F6" }
+          const categoryLabel = details.subType ? `${meta.label} (${details.subType})` : meta.label
           setTitle(`${categoryLabel} — ${details.stationName || target.city}`)
           setSubtitle(`${details.providers?.length || 0} provider${details.providers?.length !== 1 ? "s" : ""} · ${details.region || "Zone"} zone`)
 
@@ -49,10 +50,10 @@ export function Modal({ target, onClose }) {
               lastChecked: p.lastChecked,
             }))
           )
-        }
- else {
+        } else {
+          const meta = LINK_META[target?.linkKey] || { label: target?.linkKey || "Network", short: "NET", color: "#3B82F6" }
           const reportRows = await fetchCategoryReport(target.linkKey, target.tab)
-          setTitle(`${LINK_META[target.linkKey].label} — ${target.tab === "down" ? "Down" : "Latency"} Report`)
+          setTitle(`${meta.label} — ${target.tab === "down" ? "Down" : "Latency"} Report`)
           setSubtitle(`${reportRows.length} link${reportRows.length !== 1 ? "s" : ""} affected`)
           setRows(reportRows)
         }
@@ -69,7 +70,8 @@ export function Modal({ target, onClose }) {
   }, [target])
 
 
-  const linkKey = target.linkKey
+  const linkKey = target?.linkKey
+  const meta = LINK_META[linkKey] || { label: linkKey || "Network", short: "NET", color: "#3B82F6" }
   const allDown = rows.length > 0 && rows.every((r) => r.status === "down")
 
   const cols = [
@@ -123,9 +125,9 @@ export function Modal({ target, onClose }) {
           <div className="flex items-center gap-2.5">
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white"
-              style={{ backgroundColor: LINK_META[linkKey].color }}
+              style={{ backgroundColor: meta.color }}
             >
-              {LINK_META[linkKey].short}
+              {meta.short}
             </div>
             <div>
               <p className="text-sm font-bold text-slate-800">{title || "Loading..."}</p>

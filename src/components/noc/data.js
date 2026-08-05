@@ -1,18 +1,18 @@
 // ── Static UI Configuration & Design Tokens ─────────────────────────────────
 
 export const LINK_META = {
-  broadband: { label: "Office Broadband", short: "BB",  color: "#2563EB", bg: "#EFF6FF", pill: "#BFDBFE" },
-  leaseline: { label: "Lease Line",       short: "LL",  color: "#7C3AED", bg: "#F5F3FF", pill: "#DDD6FE" },
-  mpls:      { label: "MPLS",             short: "MP",  color: "#D97706", bg: "#FFFBEB", pill: "#FDE68A" },
-  cti:       { label: "CTI Internet",     short: "CTI", color: "#0D9488", bg: "#F0FDFA", pill: "#99F6E4" },
+  broadband: { label: "Office Broadband", short: "Office Broadband", color: "#2563EB", bg: "#EFF6FF", pill: "#BFDBFE" },
+  leaseline: { label: "Lease Line", short: "Lease Line", color: "#7C3AED", bg: "#F5F3FF", pill: "#DDD6FE" },
+  mpls: { label: "MPLS", short: "MPLS", color: "#D97706", bg: "#FFFBEB", pill: "#FDE68A" },
+  cti: { label: "CTI Internet", short: "CTI Internet", color: "#0D9488", bg: "#F0FDFA", pill: "#99F6E4" },
 };
 
 export const LINK_KEYS = Object.keys(LINK_META);
 
 export const S_COLOR = { up: "#10B981", down: "#EF4444", latency: "#F59E0B" };
-export const S_BG    = { up: "#ECFDF5", down: "#FEF2F2", latency: "#FFFBEB" };
-export const S_RING  = { up: "#A7F3D0", down: "#FECACA", latency: "#FDE68A" };
-export const S_TEXT  = { up: "Active",  down: "Down",    latency: "Latency" };
+export const S_BG = { up: "#ECFDF5", down: "#FEF2F2", latency: "#FFFBEB" };
+export const S_RING = { up: "#A7F3D0", down: "#FECACA", latency: "#FDE68A" };
+export const S_TEXT = { up: "Active", down: "Down", latency: "Latency" };
 
 // ── Indian zone & status filter dropdown options ──────────────────────────────
 

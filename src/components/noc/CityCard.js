@@ -30,19 +30,11 @@ export function CityCard({ city, onLink }) {
       {/* Links */}
       <div className="px-1.5 py-1.5 space-y-0.5">
         {LINK_KEYS.map((k) => {
-          const link = city.links[k]
+          const link = city.links?.[k]
 
-          // Link type not procured at this location
+          // Link type not procured at this location - do not render
           if (!link) {
-            return (
-              <div key={k} className="w-full flex items-center gap-1.5 px-1 py-0.5 rounded opacity-40">
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-slate-300" />
-                <span className="text-[10px] font-semibold flex-1 text-left truncate text-slate-400">
-                  {k === "leaseline" ? LINK_META[k].label : LINK_META[k].short}
-                </span>
-                <span className="text-[9px] text-slate-300 leading-none flex-shrink-0">n/a</span>
-              </div>
-            )
+            return null
           }
 
           const status = getLinkStatus(link)

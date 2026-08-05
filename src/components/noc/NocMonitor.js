@@ -22,45 +22,59 @@ export default function NocMonitor() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  async function loadInitialData() {
-    setLoading(true)
-    setError(null)
-    try {
-      const [sumData, metData, altData, stnData] = await Promise.all([
-        fetchTelemetrySummary(),
-        fetchCategoryMetrics(),
-        fetchLiveAlerts(),
-        fetchStations(regionFilter, statusFilter),
-      ])
-      setSummary(sumData)
-      setMetrics(metData)
-      setAlerts(altData)
-      setStations(stnData)
-    } catch (err) {
-      console.error("NOC Server Connection Error:", err)
-      setError("Unable to connect to NOC Backend Server (http://localhost:5000). Please check if the server is running.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   // Initial load
   useEffect(() => {
+    let isMounted = true
+    async function loadInitialData() {
+      setError(null)
+      try {
+        const [sumData, metData, altData, stnData] = await Promise.all([
+          fetchTelemetrySummary(),
+          fetchCategoryMetrics(),
+          fetchLiveAlerts(),
+          fetchStations(regionFilter, statusFilter),
+        ])
+        if (isMounted) {
+          setSummary(sumData)
+          setMetrics(metData)
+          setAlerts(altData)
+          setStations(stnData)
+        }
+      } catch (err) {
+        console.error("NOC Server Connection Error:", err)
+        if (isMounted) {
+          setError("Unable to connect to NOC Backend Server (http://localhost:5000). Please check if the server is running.")
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
     loadInitialData()
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   // Reload stations on filter change
   useEffect(() => {
+    let isMounted = true
     async function loadStationData() {
       try {
         const stnData = await fetchStations(regionFilter, statusFilter)
-        setStations(stnData)
+        if (isMounted) {
+          setStations(stnData)
+        }
       } catch (err) {
-        setError("Unable to fetch station data from NOC Backend Server.")
+        if (isMounted) {
+          setError("Unable to fetch station data from NOC Backend Server.")
+        }
       }
     }
-    if (!loading) {
-      loadStationData()
+    loadStationData()
+    return () => {
+      isMounted = false
     }
   }, [regionFilter, statusFilter])
 
@@ -78,7 +92,8 @@ export default function NocMonitor() {
     if (activeCard?.key === key && activeCard?.tab === tab) {
       setActiveCard(null); setModal(null)
     } else {
-      setActiveCard({ key, tab }); setModal({ kind: "card", linkKey: key, tab })
+      setActiveCard({ key, tab })
+      setModal({ kind: "card", linkKey: key, tab })
     }
   }
 
@@ -100,6 +115,7 @@ export default function NocMonitor() {
         <header className="bg-white border-b border-slate-200 shadow-sm flex-shrink-0">
           <div className="px-5 py-2.5 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://www.radiocity.in/rc-new/images/RC-logonew.png"
                 alt="Radio City"

@@ -26,7 +26,9 @@ export async function fetchLiveAlerts() {
   const res = await fetch(`${API_BASE}/alerts/live`);
   if (!res.ok) throw new Error(`Server API error (${res.status}): Failed to fetch live alerts`);
   const data = await res.json();
-  return data.alerts;
+  const alertsArray = data.alerts || [];
+  alertsArray.unreadDownCount = data.unreadDownCount || 0;
+  return alertsArray;
 }
 
 export async function fetchStationLinkDetails(stationName, linkKey) {
@@ -48,6 +50,15 @@ export async function fetchCategoryReport(linkKey, status) {
   const data = await res.json();
   return data.records;
 }
+
+export async function fetchHistoricalReport(startDate, endDate) {
+  const params = new URLSearchParams({ startDate, endDate });
+  const res = await fetch(`${API_BASE}/reports/historical?${params}`);
+  if (!res.ok) throw new Error(`Server API error (${res.status}): Failed to fetch historical report`);
+  const data = await res.json();
+  return data.records || [];
+}
+
 
 export function subscribeToAlertStream(optionsOrOnAlert, onError) {
   let ws = null;

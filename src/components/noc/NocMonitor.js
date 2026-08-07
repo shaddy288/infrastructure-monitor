@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { LINK_META, REGIONS, STATUS_FILTERS } from "./data"
 import { fetchTelemetrySummary, fetchCategoryMetrics, fetchStations, fetchLiveAlerts, subscribeToAlertStream } from "./api"
 import { AlertsPanel } from "./AlertsPanel"
@@ -14,7 +14,7 @@ export default function NocMonitor() {
   const [alerts, setAlerts] = useState([])
   const [summary, setSummary] = useState({ totalStations: 0, upLinks: 0, downLinks: 0, healthPercentage: 100 })
   const [metrics, setMetrics] = useState([])
-  const [stations, setStations] = useState([])
+  const [allStations, setAllStations] = useState([])
   const [modal, setModal] = useState(null)
   const [activeCard, setActiveCard] = useState(null)
   const [regionFilter, setRegionFilter] = useState("All Regions")
@@ -22,61 +22,53 @@ export default function NocMonitor() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Initial load
-  useEffect(() => {
-    let isMounted = true
-    async function loadInitialData() {
-      setError(null)
-      try {
-        const [sumData, metData, altData, stnData] = await Promise.all([
-          fetchTelemetrySummary(),
-          fetchCategoryMetrics(),
-          fetchLiveAlerts(),
-          fetchStations(regionFilter, statusFilter),
-        ])
-        if (isMounted) {
-          setSummary(sumData)
-          setMetrics(metData)
-          setAlerts(altData)
-          setStations(stnData)
-        }
-      } catch (err) {
-        console.error("NOC Server Connection Error:", err)
-        if (isMounted) {
-          setError("Unable to connect to NOC Backend Server (http://localhost:5000). Please check if the server is running.")
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
-      }
-    }
-    loadInitialData()
-    return () => {
-      isMounted = false
+  // Load initial data once from server
+  const loadInitialData = useCallback(async () => {
+    setError(null)
+    setLoading(true)
+    try {
+      const [sumData, metData, altData, stnData] = await Promise.all([
+        fetchTelemetrySummary(),
+        fetchCategoryMetrics(),
+        fetchLiveAlerts(),
+        fetchStations("All Regions", "All Status"),
+      ])
+      setSummary(sumData)
+      setMetrics(metData)
+      setAlerts(altData)
+      setAllStations(stnData)
+    } catch (err) {
+      console.error("NOC Server Connection Error:", err)
+      setError("Unable to connect to NOC Backend Server (http://localhost:5000). Please check if the server is running.")
+    } finally {
+      setLoading(false)
     }
   }, [])
 
-  // Reload stations on filter change
   useEffect(() => {
-    let isMounted = true
-    async function loadStationData() {
-      try {
-        const stnData = await fetchStations(regionFilter, statusFilter)
-        if (isMounted) {
-          setStations(stnData)
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError("Unable to fetch station data from NOC Backend Server.")
-        }
+    loadInitialData()
+  }, [loadInitialData])
+
+  // Instant in-memory filtering without API calls
+  const filteredStations = useMemo(() => {
+    return allStations.filter((s) => {
+      // 1. Region filter
+      if (regionFilter !== "All Regions" && s.region !== regionFilter) return false;
+
+      // 2. Status filter
+      if (statusFilter === "Down") {
+        return Object.values(s.links || {}).some((l) => l && l.status === "down");
       }
-    }
-    loadStationData()
-    return () => {
-      isMounted = false
-    }
-  }, [regionFilter, statusFilter])
+      if (statusFilter === "Latency") {
+        return Object.values(s.links || {}).some((l) => l && l.status === "latency");
+      }
+      if (statusFilter === "Up") {
+        // Station is UP if NO links are down or latency
+        return !Object.values(s.links || {}).some((l) => l && (l.status === "down" || l.status === "latency"));
+      }
+      return true;
+    });
+  }, [allStations, regionFilter, statusFilter]);
 
   // Subscribe to live WebSocket alerts & telemetry stream
   useEffect(() => {
@@ -87,55 +79,18 @@ export default function NocMonitor() {
       onSnapshot: (data) => {
         if (data.summary) setSummary(data.summary)
         if (data.categories) setMetrics(data.categories)
-        if (data.stations) {
-          if (regionFilter === "All Regions" && statusFilter === "All Status") {
-            setStations(data.stations)
-          } else {
-            // Apply active filters in-memory
-            setStations(data.stations.filter((s) => {
-              if (regionFilter !== "All Regions" && s.region !== regionFilter) return false;
-              if (statusFilter === "Down") {
-                return Object.values(s.links || {}).some((l) => l && l.status === "down");
-              }
-              if (statusFilter === "Latency") {
-                return Object.values(s.links || {}).some((l) => l && l.status === "latency");
-              }
-              if (statusFilter === "Up") {
-                return Object.values(s.links || {}).some((l) => l && (l.status === "down" || l.status === "latency"));
-              }
-              return true;
-            }));
-          }
-        }
+        if (data.stations) setAllStations(data.stations)
       },
       onTelemetryUpdate: (data) => {
         if (data.summary) setSummary(data.summary)
         if (data.categories) setMetrics(data.categories)
       },
       onStationsUpdate: (newStations) => {
-        if (newStations) {
-          if (regionFilter === "All Regions" && statusFilter === "All Status") {
-            setStations(newStations)
-          } else {
-            setStations(newStations.filter((s) => {
-              if (regionFilter !== "All Regions" && s.region !== regionFilter) return false;
-              if (statusFilter === "Down") {
-                return Object.values(s.links || {}).some((l) => l && l.status === "down");
-              }
-              if (statusFilter === "Latency") {
-                return Object.values(s.links || {}).some((l) => l && l.status === "latency");
-              }
-              if (statusFilter === "Up") {
-                return Object.values(s.links || {}).some((l) => l && (l.status === "down" || l.status === "latency"));
-              }
-              return true;
-            }));
-          }
-        }
+        if (newStations) setAllStations(newStations)
       },
     })
     return () => unsubscribe()
-  }, [regionFilter, statusFilter])
+  }, [])
 
 
 
@@ -154,7 +109,9 @@ export default function NocMonitor() {
   }
 
 
-  const downCount = alerts.filter((a) => a.status === "down").length
+  const downCount = summary.downLinks > 0
+    ? summary.downLinks
+    : (alerts.unreadDownCount || alerts.filter((a) => a.status === "down").length)
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F8F9FA] font-sans">
@@ -190,7 +147,7 @@ export default function NocMonitor() {
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold bg-emerald-50 border-emerald-100 text-emerald-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{summary.healthPercentage}% Healthy
               </span>
-              <CalendarBtn stations={stations} alerts={alerts} />
+              <CalendarBtn stations={filteredStations} alerts={alerts} />
 
             </div>
           </div>
@@ -233,7 +190,7 @@ export default function NocMonitor() {
           {/* Section divider */}
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
-              Global City Status — {stations.length} Stations
+              Global City Status — {filteredStations.length} Stations
             </span>
             <span className="flex-1 h-px bg-slate-200" />
 
@@ -246,8 +203,8 @@ export default function NocMonitor() {
 
           {/* 8-per-row city grid — worst stations (most Down, then Latency) show first */}
           <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(8, minmax(0, 1fr))" }}>
-            {stations.length > 0 ? (
-              stations.map((city) => (
+            {filteredStations.length > 0 ? (
+              filteredStations.map((city) => (
                 <CityCard key={city.name} city={city} onLink={onCityLink} />
               ))
             ) : (
@@ -261,7 +218,7 @@ export default function NocMonitor() {
 
 
       {/* ── Collapsible alerts panel (right side) ── */}
-      <AlertsPanel alerts={alerts} open={alertsOpen} />
+      <AlertsPanel alerts={alerts} open={alertsOpen} downCount={downCount} />
 
       {/* ── Right alerts toggle tab ── */}
       <AlertsToggle open={alertsOpen} count={downCount} onClick={() => setAlertsOpen((o) => !o)} />

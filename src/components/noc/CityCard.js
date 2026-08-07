@@ -44,8 +44,8 @@ export function CityCard({ city, onLink }) {
           const labelText = link.subType
             ? `${LINK_META[k].short} - ${link.subType}`
             : k === "leaseline"
-            ? LINK_META[k].label
-            : LINK_META[k].short
+              ? LINK_META[k].label
+              : LINK_META[k].short
 
           return (
             <button
@@ -75,4 +75,5 @@ export function CityCard({ city, onLink }) {
       </div>
     </div>
   )
-}
+}
+

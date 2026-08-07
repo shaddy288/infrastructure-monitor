@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react"
 import { Chip } from "./atoms"
 
-export function AlertsPanel({ alerts, open }) {
+export function AlertsPanel({ alerts = [], open, downCount }) {
   const topRef = useRef(null)
   useEffect(() => { if (topRef.current) topRef.current.scrollTop = 0 }, [alerts.length])
+
+  const badgeCount = downCount !== undefined ? downCount : alerts.filter((a) => a.status === "down").length
 
   return (
     <div
@@ -19,7 +21,7 @@ export function AlertsPanel({ alerts, open }) {
             <span className="text-[11px] font-bold text-slate-700 uppercase tracking-widest">Live Alerts</span>
           </div>
           <span className="min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full px-1">
-            {alerts.filter((a) => a.status === "down").length}
+            {badgeCount}
           </span>
         </div>
 

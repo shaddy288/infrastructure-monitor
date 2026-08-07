@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { LINK_META, REGIONS, STATUS_FILTERS } from "./data"
+import { LINK_META, REGIONS, STATUS_FILTERS, getLinkStatus } from "./data"
 import { fetchTelemetrySummary, fetchCategoryMetrics, fetchStations, fetchLiveAlerts, subscribeToAlertStream } from "./api"
 import { AlertsPanel } from "./AlertsPanel"
 import { AlertsToggle } from "./AlertsToggle"
@@ -57,14 +57,20 @@ export default function NocMonitor() {
 
       // 2. Status filter
       if (statusFilter === "Down") {
-        return Object.values(s.links || {}).some((l) => l && l.status === "down");
+        return Object.values(s.links || {}).some((l) => l && getLinkStatus(l) === "down");
+      }
+      if (statusFilter === "Degraded") {
+        return Object.values(s.links || {}).some((l) => l && getLinkStatus(l) === "degraded");
       }
       if (statusFilter === "Latency") {
-        return Object.values(s.links || {}).some((l) => l && l.status === "latency");
+        return Object.values(s.links || {}).some((l) => l && getLinkStatus(l) === "latency");
       }
       if (statusFilter === "Up") {
-        // Station is UP if NO links are down or latency
-        return !Object.values(s.links || {}).some((l) => l && (l.status === "down" || l.status === "latency"));
+        // Station is UP if NO links are down, degraded, or latency
+        return !Object.values(s.links || {}).some((l) => {
+          const st = getLinkStatus(l);
+          return st === "down" || st === "degraded" || st === "latency";
+        });
       }
       return true;
     });

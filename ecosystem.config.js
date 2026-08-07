@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "infrastructure-monitor",
+      name: "frontend",
       cwd: "./",
       script: "node_modules/next/dist/bin/next",
       args: "start",

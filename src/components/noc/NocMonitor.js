@@ -65,6 +65,9 @@ export default function NocMonitor() {
       if (statusFilter === "Latency") {
         return Object.values(s.links || {}).some((l) => l && getLinkStatus(l) === "latency");
       }
+      if (statusFilter === "Unmonitored") {
+        return Object.values(s.links || {}).some((l) => l && getLinkStatus(l) === "unmonitored");
+      }
       if (statusFilter === "Up") {
         // Station is UP if NO links are down, degraded, or latency
         return !Object.values(s.links || {}).some((l) => {

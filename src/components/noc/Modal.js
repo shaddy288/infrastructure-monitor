@@ -44,10 +44,12 @@ export function Modal({ target, onClose }) {
               location: null,
               operator: p.operator,
               ip: p.ip,
+              ipUnavailableReason: p.ipUnavailableReason,
               bandwidth: p.bandwidth,
               status: p.status,
               latencyMs: p.latencyMs,
               lastChecked: p.lastChecked,
+              date: p.date,
             }))
           )
         } else {
@@ -109,15 +111,13 @@ export function Modal({ target, onClose }) {
           }
         }
 
+        const ipVal = r.ip || (r.ipUnavailableReason ? `N/A (${r.ipUnavailableReason})` : "N/A")
         const todayStr = r.date || new Date().toISOString().split("T")[0]
         return target.kind === "card"
-          ? `"${todayStr}","${r.location || title}","${r.operator || "-"}","${r.ip || "-"}","${r.bandwidth || "-"}","${(r.status || "up").toUpperCase()}","${latStr}","${dtStr}"`
-          : `"${todayStr}","${r.operator || "-"}","${r.ip || "-"}","${r.bandwidth || "-"}","${(r.status || "up").toUpperCase()}","${latStr}","${dtStr}"`
+          ? `"${todayStr}","${r.location || title}","${r.operator || "-"}","${ipVal}","${r.bandwidth || "-"}","${(r.status || "up").toUpperCase()}","${latStr}","${dtStr}"`
+          : `"${todayStr}","${r.operator || "-"}","${ipVal}","${r.bandwidth || "-"}","${(r.status || "up").toUpperCase()}","${latStr}","${dtStr}"`
       }),
     ].join("\n")
-
-
-
 
     const blobContent = "\uFEFF" + csvLines
     const a = document.createElement("a")
@@ -191,11 +191,26 @@ export function Modal({ target, onClose }) {
                     <span className="text-xs font-bold text-slate-700 truncate">{r.location}</span>
                   )}
                   <span className="text-xs font-medium text-slate-800 truncate">{r.operator}</span>
-                  <span className="text-xs font-mono text-slate-600 truncate">{r.ip}</span>
+                  {r.ip ? (
+                    <span className="text-xs font-mono text-slate-600 truncate">{r.ip}</span>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded truncate max-w-fit"
+                      title={r.ipUnavailableReason || "NO Static IP"}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      {r.ipUnavailableReason || "NO Static IP"}
+                    </span>
+                  )}
                   <span className="text-xs font-mono font-semibold text-slate-700">{r.bandwidth}</span>
                   <Chip s={r.status} />
                   {!allDown && (
                     r.status === "down" ? (
+                      <span className="text-xs text-slate-400">—</span>
+                    ) : r.status === "unmonitored" ? (
                       <span className="text-xs text-slate-400">—</span>
                     ) : (
                       <span className="text-xs font-mono font-bold" style={{ color: r.status === "latency" ? S_COLOR.latency : S_COLOR.up }}>

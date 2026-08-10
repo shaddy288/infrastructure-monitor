@@ -76,11 +76,33 @@ export function CityCard({ city, onLink }) {
                 {labelText}{multi ? ` ×${link.providers.length}` : ""}
               </span>
 
-              {status === "degraded" && (
+              {status === "degraded" && link.providers && link.providers.length > 0 ? (
+                <div
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-50/80 border border-orange-200 flex-shrink-0"
+                  title={`${upCount}/${totalCount} Up (${link.providers.map((p) => `${p.operator || 'Provider'}: ${p.status}`).join(', ')})`}
+                >
+                  {link.providers.map((p, idx) => {
+                    const dotColor =
+                      p.status === "up"
+                        ? "bg-emerald-500"
+                        : p.status === "down"
+                        ? "bg-red-500 animate-pulse"
+                        : p.status === "latency"
+                        ? "bg-amber-500"
+                        : "bg-slate-400";
+                    return (
+                      <span
+                        key={idx}
+                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`}
+                      />
+                    );
+                  })}
+                </div>
+              ) : status === "degraded" ? (
                 <span className="text-[8.5px] font-bold leading-none flex-shrink-0 text-orange-600 bg-orange-50 px-1 py-0.5 rounded border border-orange-200">
                   {upCount}/{totalCount} Up
                 </span>
-              )}
+              ) : null}
               {status === "latency" && (
                 <span className="text-[9px] font-bold leading-none flex-shrink-0" style={{ color: S_COLOR[status] }}>
                   {activeProvider?.latencyMs || 0}ms

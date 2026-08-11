@@ -1,18 +1,39 @@
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { LINK_KEYS, LINK_META } from "./data"
 import { fetchHistoricalReport } from "./api"
 
-export function CalendarBtn({ stations = [], alerts = [] }) {
+export function CalendarBtn({ stations = [], alerts = [], availableDateInfo = null }) {
   const MN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   const DN = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
   const td = new Date()
+
+  const availableSet = useMemo(() => {
+    return new Set(availableDateInfo?.availableDates || [])
+  }, [availableDateInfo])
+
+  const minDateObj = useMemo(() => {
+    return availableDateInfo?.minDate ? new Date(availableDateInfo.minDate + "T00:00:00") : null
+  }, [availableDateInfo])
+
+  const maxDateObj = useMemo(() => {
+    return availableDateInfo?.maxDate ? new Date(availableDateInfo.maxDate + "T00:00:00") : null
+  }, [availableDateInfo])
+
   const [open, setOpen] = useState(false)
-  const [vy, setVy] = useState(td.getFullYear())
-  const [vm, setVm] = useState(td.getMonth())
+  const [vy, setVy] = useState(maxDateObj ? maxDateObj.getFullYear() : td.getFullYear())
+  const [vm, setVm] = useState(maxDateObj ? maxDateObj.getMonth() : td.getMonth())
   const [rs, setRs] = useState(null)
   const [re, setRe] = useState(null)
   const [hov, setHov] = useState(null)
   const [exporting, setExporting] = useState(false)
+
+  // Sync calendar view month when available date info loads
+  useEffect(() => {
+    if (maxDateObj) {
+      setVy(maxDateObj.getFullYear())
+      setVm(maxDateObj.getMonth())
+    }
+  }, [maxDateObj])
 
   function dim(y, m) { return new Date(y, m + 1, 0).getDate() }
   function fd(y, m) { return new Date(y, m, 1).getDay() }
@@ -26,32 +47,73 @@ export function CalendarBtn({ stations = [], alerts = [] }) {
   function fmt(d) { return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}` }
   function toIso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` }
 
-  function pm() { vm === 0 ? (setVm(11), setVy((y) => y - 1)) : setVm((m) => m - 1) }
-  function nm() { vm === 11 ? (setVm(0), setVy((y) => y + 1)) : setVm((m) => m + 1) }
+  function isAvailable(d) {
+    if (!d) return false
+    const iso = toIso(d)
+    if (availableSet.size > 0) {
+      return availableSet.has(iso)
+    }
+    if (minDateObj && maxDateObj) {
+      return d >= minDateObj && d <= maxDateObj
+    }
+    return true
+  }
+
+  function canPrevMonth() {
+    if (!minDateObj) return true
+    const prevMonthDate = new Date(vy, vm - 1, dim(vy, vm - 1))
+    return prevMonthDate >= minDateObj
+  }
+
+  function canNextMonth() {
+    if (!maxDateObj) return true
+    const nextMonthDate = new Date(vy, vm + 1, 1)
+    return nextMonthDate <= maxDateObj
+  }
+
+  function pm() {
+    if (!canPrevMonth()) return
+    vm === 0 ? (setVm(11), setVy((y) => y - 1)) : setVm((m) => m - 1)
+  }
+  function nm() {
+    if (!canNextMonth()) return
+    vm === 11 ? (setVm(0), setVy((y) => y + 1)) : setVm((m) => m + 1)
+  }
+
   function pick(d) {
+    if (!isAvailable(d)) return
     if (!rs || (rs && re)) { setRs(d); setRe(null) }
     else { d < rs ? (setRe(rs), setRs(d)) : setRe(d) }
   }
 
   // Preset Date Selection Helpers
-  function selectPreset(daysAgo) {
-    const end = new Date()
-    const start = new Date()
-    if (daysAgo > 0) {
-      start.setDate(end.getDate() - daysAgo)
+  function selectPreset(type) {
+    const end = maxDateObj || new Date()
+    const start = new Date(end)
+
+    if (type === "latest") {
+      setRs(end)
+      setRe(end)
+    } else if (type === "7days") {
+      start.setDate(end.getDate() - 6)
+      const clampedStart = (minDateObj && start < minDateObj) ? minDateObj : start
+      setRs(clampedStart)
+      setRe(end)
+    } else if (type === "all") {
+      setRs(minDateObj || start)
+      setRe(end)
     }
-    setRs(start)
-    setRe(end)
     setVm(end.getMonth())
     setVy(end.getFullYear())
   }
 
   async function generateCsv() {
     setExporting(true)
-    const fr = rs ? fmt(rs) : fmt(td)
+    const fallbackDate = maxDateObj || td
+    const fr = rs ? fmt(rs) : fmt(fallbackDate)
     const to = re ? fmt(re) : fr
 
-    const startDateIso = rs ? toIso(rs) : toIso(td)
+    const startDateIso = rs ? toIso(rs) : toIso(fallbackDate)
     const endDateIso = re ? toIso(re) : startDateIso
 
     let rows = []
@@ -82,7 +144,7 @@ export function CalendarBtn({ stations = [], alerts = [] }) {
             if (p.status === "down") downCount++
             if (p.status === "latency") latencyCount++
             const latencyStr = p.status === "down" ? "N/A" : `${p.latencyMs || 0} ms`
-            let downTimeStr = p.downTime || p.down_time || "N/A"
+            let downTimeStr = p.downTime || p.down_since || "N/A"
             const ipVal = p.ip || p.ip_address || "-"
             const bwVal = p.bandwidth || "-"
             const opVal = p.operator || "-"
@@ -141,17 +203,25 @@ export function CalendarBtn({ stations = [], alerts = [] }) {
       >
         {/* Preset buttons row */}
         <div className="flex gap-1 p-2 bg-slate-50 border-b border-slate-100 text-[10px]">
-          <button onClick={() => selectPreset(0)} className="flex-1 py-1 rounded bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 cursor-pointer">Today</button>
-          <button onClick={() => selectPreset(7)} className="flex-1 py-1 rounded bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 cursor-pointer">Last 7 Days</button>
-          <button onClick={() => selectPreset(30)} className="flex-1 py-1 rounded bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 cursor-pointer">Last 30 Days</button>
+          <button onClick={() => selectPreset("latest")} className="flex-1 py-1 rounded bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 cursor-pointer truncate">Latest</button>
+          <button onClick={() => selectPreset("7days")} className="flex-1 py-1 rounded bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 cursor-pointer truncate">Last 7 Days</button>
+          <button onClick={() => selectPreset("all")} className="flex-1 py-1 rounded bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 cursor-pointer truncate">All ({availableDateInfo?.totalAvailableDays || 10} Days)</button>
         </div>
 
         <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100">
-          <button onClick={pm} className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 cursor-pointer">
+          <button
+            onClick={pm}
+            disabled={!canPrevMonth()}
+            className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+          >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M7 2L3 5l4 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
           <span className="text-xs font-bold text-slate-800">{MN[vm]} {vy}</span>
-          <button onClick={nm} className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 cursor-pointer">
+          <button
+            onClick={nm}
+            disabled={!canNextMonth()}
+            className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+          >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         </div>
@@ -163,7 +233,11 @@ export function CalendarBtn({ stations = [], alerts = [] }) {
           <div className="grid grid-cols-7 gap-y-0.5">
             {cells.map((date, i) => {
               if (!date) return <span key={i} />
-              const iS = rs && sd(date, rs), iE = re && sd(date, re), iM = inr(date), iT = sd(date, td)
+              const avail = isAvailable(date)
+              if (!avail) {
+                return <span key={i} className="h-7 text-[11px] font-medium text-slate-200 flex items-center justify-center pointer-events-none select-none opacity-0">{date.getDate()}</span>
+              }
+              const iS = rs && sd(date, rs), iE = re && sd(date, re), iM = inr(date), iT = sd(date, maxDateObj || td)
               return (
                 <button
                   key={i}
@@ -171,7 +245,7 @@ export function CalendarBtn({ stations = [], alerts = [] }) {
                   onMouseEnter={() => setHov(date)}
                   onMouseLeave={() => setHov(null)}
                   className={`h-7 text-[11px] font-medium cursor-pointer rounded transition-all
-                      ${iS || iE ? "bg-blue-600 text-white" : iM ? "bg-blue-100 text-blue-700 rounded-none" : "text-slate-700 hover:bg-slate-100"}
+                      ${iS || iE ? "bg-blue-600 text-white" : iM ? "bg-blue-100 text-blue-700 rounded-none" : "text-slate-700 hover:bg-blue-50 hover:text-blue-700"}
                       ${iT && !iS && !iE ? "underline decoration-dotted font-bold" : ""}`}
                 >
                   {date.getDate()}

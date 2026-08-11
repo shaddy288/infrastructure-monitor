@@ -59,6 +59,32 @@ export async function fetchHistoricalReport(startDate, endDate) {
   return data.records || [];
 }
 
+export async function fetchAvailableDates() {
+  try {
+    const res = await fetch(`${API_BASE}/reports/available-dates`);
+    if (!res.ok) throw new Error(`Server API error (${res.status}): Failed to fetch available dates`);
+    return await res.json();
+  } catch (err) {
+    console.warn("Using fallback available dates:", err);
+    const today = new Date();
+    const todayIso = today.toISOString().split("T")[0];
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 9);
+    const minIso = startDate.toISOString().split("T")[0];
+    const dates = [];
+    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+      dates.push(d.toISOString().split("T")[0]);
+    }
+    return {
+      minDate: minIso,
+      maxDate: todayIso,
+      availableDates: dates,
+      totalAvailableDays: dates.length
+    };
+  }
+}
+
+
 
 export function subscribeToAlertStream(optionsOrOnAlert, onError) {
   let ws = null;

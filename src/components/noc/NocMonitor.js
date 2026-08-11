@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { LINK_META, REGIONS, STATUS_FILTERS, getLinkStatus } from "./data"
-import { fetchTelemetrySummary, fetchCategoryMetrics, fetchStations, fetchLiveAlerts, subscribeToAlertStream } from "./api"
+import { fetchTelemetrySummary, fetchCategoryMetrics, fetchStations, fetchLiveAlerts, fetchAvailableDates, subscribeToAlertStream } from "./api"
 import { AlertsPanel } from "./AlertsPanel"
 import { AlertsToggle } from "./AlertsToggle"
 import { MetricCard } from "./MetricCard"
@@ -15,6 +15,7 @@ export default function NocMonitor() {
   const [summary, setSummary] = useState({ totalStations: 0, upLinks: 0, downLinks: 0, healthPercentage: 100 })
   const [metrics, setMetrics] = useState([])
   const [allStations, setAllStations] = useState([])
+  const [availableDateInfo, setAvailableDateInfo] = useState(null)
   const [modal, setModal] = useState(null)
   const [activeCard, setActiveCard] = useState(null)
   const [regionFilter, setRegionFilter] = useState("All Regions")
@@ -27,16 +28,18 @@ export default function NocMonitor() {
     setError(null)
     setLoading(true)
     try {
-      const [sumData, metData, altData, stnData] = await Promise.all([
+      const [sumData, metData, altData, stnData, datesData] = await Promise.all([
         fetchTelemetrySummary(),
         fetchCategoryMetrics(),
         fetchLiveAlerts(),
         fetchStations("All Regions", "All Status"),
+        fetchAvailableDates(),
       ])
       setSummary(sumData)
       setMetrics(metData)
       setAlerts(altData)
       setAllStations(stnData)
+      setAvailableDateInfo(datesData)
     } catch (err) {
       console.error("NOC Server Connection Error:", err)
       setError("Unable to connect to NOC Backend Server (http://localhost:5000). Please check if the server is running.")
@@ -156,7 +159,7 @@ export default function NocMonitor() {
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold bg-emerald-50 border-emerald-100 text-emerald-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{summary.healthPercentage}% Healthy
               </span>
-              <CalendarBtn stations={filteredStations} alerts={alerts} />
+              <CalendarBtn stations={filteredStations} alerts={alerts} availableDateInfo={availableDateInfo} />
 
             </div>
           </div>

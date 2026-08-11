@@ -129,28 +129,28 @@ export function Modal({ target, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8"
       style={{ backgroundColor: "rgba(15,23,42,0.5)", backdropFilter: "blur(5px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col animate-[modalIn_180ms_ease-out]">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl max-h-[85vh] overflow-hidden flex flex-col animate-[modalIn_180ms_ease-out]">
         {/* Modal header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white"
+              className="w-7 h-7 lg:w-9 lg:h-9 rounded-lg flex items-center justify-center text-[20px] lg:text-2xl font-black text-white"
               style={{ backgroundColor: meta.color }}
             >
               {meta.short}
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-800">{title || "Loading..."}</p>
-              <p className="text-[10px] text-slate-500 mt-px">{subtitle}</p>
+              <p className="text-sm sm:text-base lg:text-lg font-extrabold text-slate-800">{title || "Loading..."}</p>
+              <p className="text-[10px] sm:text-xs lg:text-sm text-slate-500 mt-px font-semibold">{subtitle}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer flex-shrink-0"
+            className="w-7 h-7 lg:w-9 lg:h-9 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer flex-shrink-0"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -159,11 +159,11 @@ export function Modal({ target, onClose }) {
         </div>
 
         {/* Provider table */}
-        <div className="px-5 py-4 overflow-y-auto">
+        <div className="px-5 py-4 lg:px-6 lg:py-5 overflow-y-auto">
           {loading ? (
-            <div className="py-8 text-center text-sm text-slate-400">Loading details from backend...</div>
+            <div className="py-8 text-center text-sm lg:text-base font-semibold text-slate-400">Loading details from backend...</div>
           ) : rows.length === 0 ? (
-            <p className="text-center text-sm text-slate-400 py-8">No records to show.</p>
+            <p className="text-center text-sm lg:text-base font-semibold text-slate-400 py-8">No records to show.</p>
           ) : (
             <div className="rounded-xl border border-slate-200 overflow-hidden">
               {/* Header row */}
@@ -171,12 +171,12 @@ export function Modal({ target, onClose }) {
                 className="grid gap-x-2 bg-slate-50 border-b border-slate-200 px-3 py-2"
                 style={{ gridTemplateColumns: cols }}
               >
-                {target.kind === "card" && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Location</span>}
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Operator</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">IP Address</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bandwidth</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</span>
-                {!allDown && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Latency</span>}
+                {target.kind === "card" && <span className="text-[10px] sm:text-xs lg:text-sm font-extrabold text-slate-400 uppercase tracking-wider">Location</span>}
+                <span className="text-[10px] sm:text-xs lg:text-sm font-extrabold text-slate-400 uppercase tracking-wider">Operator</span>
+                <span className="text-[10px] sm:text-xs lg:text-sm font-extrabold text-slate-400 uppercase tracking-wider">IP Address</span>
+                <span className="text-[10px] sm:text-xs lg:text-sm font-extrabold text-slate-400 uppercase tracking-wider">Bandwidth</span>
+                <span className="text-[10px] sm:text-xs lg:text-sm font-extrabold text-slate-400 uppercase tracking-wider">Status</span>
+                {!allDown && <span className="text-[10px] sm:text-xs lg:text-sm font-extrabold text-slate-400 uppercase tracking-wider">Latency</span>}
               </div>
 
               {/* Data rows */}
@@ -188,14 +188,14 @@ export function Modal({ target, onClose }) {
                   style={{ gridTemplateColumns: cols }}
                 >
                   {target.kind === "card" && (
-                    <span className="text-xs font-bold text-slate-700 truncate">{r.location}</span>
+                    <span className="text-xs sm:text-sm lg:text-base font-extrabold text-slate-700 truncate">{r.location}</span>
                   )}
-                  <span className="text-xs font-medium text-slate-800 truncate">{r.operator}</span>
+                  <span className="text-xs sm:text-sm lg:text-base font-bold text-slate-800 truncate">{r.operator}</span>
                   {r.ip ? (
-                    <span className="text-xs font-mono text-slate-600 truncate">{r.ip}</span>
+                    <span className="text-xs sm:text-sm lg:text-base font-mono font-semibold text-slate-600 truncate">{r.ip}</span>
                   ) : (
                     <span
-                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded truncate max-w-fit"
+                      className="inline-flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded truncate max-w-fit"
                       title={r.ipUnavailableReason || "NO Static IP"}
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
@@ -205,15 +205,15 @@ export function Modal({ target, onClose }) {
                       {r.ipUnavailableReason || "NO Static IP"}
                     </span>
                   )}
-                  <span className="text-xs font-mono font-semibold text-slate-700">{r.bandwidth}</span>
+                  <span className="text-xs sm:text-sm lg:text-base font-mono font-extrabold text-slate-700">{r.bandwidth}</span>
                   <Chip s={r.status} />
                   {!allDown && (
                     r.status === "down" ? (
-                      <span className="text-xs text-slate-400">—</span>
+                      <span className="text-xs sm:text-sm lg:text-base font-semibold text-slate-400">—</span>
                     ) : r.status === "unmonitored" ? (
-                      <span className="text-xs text-slate-400">—</span>
+                      <span className="text-xs sm:text-sm lg:text-base font-semibold text-slate-400">—</span>
                     ) : (
-                      <span className="text-xs font-mono font-bold" style={{ color: r.status === "latency" ? S_COLOR.latency : S_COLOR.up }}>
+                      <span className="text-xs sm:text-sm lg:text-base font-mono font-extrabold" style={{ color: r.status === "latency" ? S_COLOR.latency : S_COLOR.up }}>
                         {r.latencyMs} ms
                       </span>
                     )
@@ -226,11 +226,11 @@ export function Modal({ target, onClose }) {
 
         {/* Footer */}
         <div className="flex items-center px-5 py-2.5 border-t border-slate-100 bg-slate-50 flex-shrink-0 gap-2">
-          <span className="text-[10px] text-slate-400 mr-auto">Press Esc or click outside to dismiss</span>
+          <span className="text-[10px] sm:text-xs lg:text-sm text-slate-400 mr-auto font-semibold">Press Esc or click outside to dismiss</span>
           {rows.length > 0 && (
             <button
               onClick={exportModalCsv}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg text-xs sm:text-sm lg:text-base font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
                 <path d="M5 1v5M2.5 4L5 6.5 7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -241,7 +241,7 @@ export function Modal({ target, onClose }) {
           )}
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#0F172A] text-white hover:bg-slate-700 transition-colors cursor-pointer"
+            className="px-4 py-1.5 lg:px-5 lg:py-2 rounded-lg text-xs sm:text-sm lg:text-base font-bold bg-[#0F172A] text-white hover:bg-slate-700 transition-colors cursor-pointer"
           >
             Close
           </button>

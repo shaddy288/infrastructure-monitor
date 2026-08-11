@@ -16,7 +16,7 @@ export function MetricCard({ stat, activeTab, onTab }) {
         <div className="flex items-start justify-between mb-2">
           <div>
             {/* <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{meta.short}</span> */}
-            <p className="text-[20px] font-bold text-slate-800 leading-tight mt-0.5">{meta.label}</p>
+            <p className="text-[20px] font-extrabold text-slate-800 leading-tight mt-0.5">{meta.label}</p>
           </div>
           <span className="text-2xl font-black text-slate-900 tabular-nums leading-none">{stat.total}</span>
         </div>
@@ -32,21 +32,21 @@ export function MetricCard({ stat, activeTab, onTab }) {
         {/* Status badges */}
         <div className="flex items-center gap-1.5">
           <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700">
-            <Dot s="up" /><span className="text-[11px] font-bold">UP {stat.up}</span>
+            <Dot s="up" /><span className="text-[11px] font-extrabold">UP {stat.up}</span>
           </div>
           <button
             onClick={() => onTab("down")}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer transition-all
               ${activeTab === "down" ? "bg-red-500 text-white shadow-sm" : "bg-red-50 text-red-600 hover:bg-red-100"}`}
           >
-            <Dot s="down" /><span className="text-[11px] font-bold">Down {stat.down}</span>
+            <Dot s="down" /><span className="text-[11px] font-extrabold">Down {stat.down}</span>
           </button>
           <button
             onClick={() => onTab("latency")}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer transition-all
               ${activeTab === "latency" ? "bg-amber-500 text-white shadow-sm" : "bg-amber-50 text-amber-600 hover:bg-amber-100"}`}
           >
-            <Dot s="latency" /><span className="text-[11px] font-bold">Latency {stat.latency}</span>
+            <Dot s="latency" /><span className="text-[11px] font-extrabold">Latency {stat.latency}</span>
           </button>
           <span className="ml-auto text-[10px] text-slate-400">{pct}%</span>
         </div>

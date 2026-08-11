@@ -13,24 +13,24 @@ export function CityCard({ city, onLink }) {
     >
       {/* Header */}
       <div
-        className={`px-2 py-1.5 border-b flex items-center gap-1
+        className={`px-2 py-1.5 sm:px-3 sm:py-2 border-b flex items-center gap-1 sm:gap-1.5
         ${isDown ? "bg-red-50 border-red-100" : isDegraded ? "bg-orange-50 border-orange-100" : isLatency ? "bg-amber-50 border-amber-100" : "bg-slate-50 border-slate-100"}`}
       >
-        {isDown && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />}
-        {isDegraded && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
-        {isLatency && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
+        {isDown && <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />}
+        {isDegraded && <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-orange-500 flex-shrink-0" />}
+        {isLatency && <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-amber-500 flex-shrink-0" />}
         <span
-          className={`text-[11px] font-bold truncate flex-1
+          className={`text-[11px] sm:text-xs lg:text-sm xl:text-base font-extrabold truncate flex-1
           ${isDown ? "text-red-700" : isDegraded ? "text-orange-700" : isLatency ? "text-amber-700" : "text-slate-700"}`}
           title={city.name}
         >
           {city.name}
         </span>
-        <span className="text-[9px] text-slate-400 font-semibold flex-shrink-0">{city.region}</span>
+        <span className="text-[9px] sm:text-[11px] lg:text-xs text-slate-400 font-bold flex-shrink-0">{city.region}</span>
       </div>
 
       {/* Links */}
-      <div className="px-1.5 py-1.5 space-y-0.5">
+      <div className="px-1.5 py-1.5 sm:px-2 sm:py-2 space-y-0.5 sm:space-y-1">
         {LINK_KEYS.map((k) => {
           const link = city.links?.[k]
 
@@ -55,12 +55,15 @@ export function CityCard({ city, onLink }) {
             <button
               key={k}
               onClick={() => onLink(city, k)}
-              className="w-full flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-slate-50 cursor-pointer transition-colors group"
+              className="w-full flex items-center gap-1.5 px-1 py-0.5 sm:py-1 rounded hover:bg-slate-50 cursor-pointer transition-colors group"
             >
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: S_COLOR[status] || "#64748B" }} />
               <span
-                className={`text-[10px] flex-1 text-left truncate
-                ${status === "down" ? "text-red-600 font-semibold" : status === "degraded" ? "text-orange-600 font-semibold" : status === "latency" ? "text-amber-600 font-semibold" : status === "unmonitored" ? "text-slate-400 italic font-medium" : "text-slate-500 font-semibold"}
+                className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: S_COLOR[status] || "#64748B" }}
+              />
+              <span
+                className={`text-[10px] sm:text-xs lg:text-sm xl:text-base flex-1 text-left truncate
+                ${status === "down" ? "text-red-600 font-bold" : status === "degraded" ? "text-orange-600 font-bold" : status === "latency" ? "text-amber-600 font-bold" : status === "unmonitored" ? "text-slate-400 italic font-semibold" : "text-slate-500 font-bold"}
                 group-hover:text-slate-700`}
               >
                 {labelText}{multi ? ` ×${link.providers.length}` : ""}
@@ -68,7 +71,7 @@ export function CityCard({ city, onLink }) {
 
               {status !== "up" && link.providers && link.providers.length > 1 ? (
                 <div
-                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border flex-shrink-0
+                  className={`flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full border flex-shrink-0
                     ${status === "degraded" ? "bg-orange-50/80 border-orange-200" : status === "latency" ? "bg-amber-50/80 border-amber-200" : status === "down" ? "bg-red-50/80 border-red-200" : "bg-slate-50 border-slate-200"}`}
                   title={`${upCount}/${totalCount} Up (${link.providers.map((p) => `${p.operator || 'Provider'}: ${p.status}${p.latencyMs ? ` (${p.latencyMs}ms)` : ''}`).join(', ')})`}
                 >
@@ -84,26 +87,26 @@ export function CityCard({ city, onLink }) {
                     return (
                       <span
                         key={idx}
-                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`}
+                        className={`w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full flex-shrink-0 ${dotColor}`}
                       />
                     );
                   })}
                   {status === "latency" && activeProvider?.latencyMs > 0 && (
-                    <span className="text-[8.5px] font-bold leading-none text-amber-600 ml-0.5">
+                    <span className="text-[8.5px] sm:text-[10px] lg:text-xs font-extrabold leading-none text-amber-600 ml-0.5">
                       {activeProvider.latencyMs}ms
                     </span>
                   )}
                 </div>
               ) : status === "degraded" ? (
-                <span className="text-[8.5px] font-bold leading-none flex-shrink-0 text-orange-600 bg-orange-50 px-1 py-0.5 rounded border border-orange-200">
+                <span className="text-[8.5px] sm:text-[10px] lg:text-xs font-extrabold leading-none flex-shrink-0 text-orange-600 bg-orange-50 px-1 py-0.5 rounded border border-orange-200">
                   {upCount}/{totalCount} Up
                 </span>
               ) : status === "latency" ? (
-                <span className="text-[9px] font-bold leading-none flex-shrink-0" style={{ color: S_COLOR[status] }}>
+                <span className="text-[9px] sm:text-[11px] lg:text-xs font-extrabold leading-none flex-shrink-0" style={{ color: S_COLOR[status] }}>
                   {activeProvider?.latencyMs || 0}ms
                 </span>
               ) : status === "down" ? (
-                <span className="text-[9px] font-bold leading-none flex-shrink-0" style={{ color: S_COLOR[status] }}>
+                <span className="text-[9px] sm:text-[11px] lg:text-xs font-extrabold leading-none flex-shrink-0" style={{ color: S_COLOR[status] }}>
                   ✕
                 </span>
               ) : null}
@@ -114,4 +117,3 @@ export function CityCard({ city, onLink }) {
     </div>
   )
 }
-

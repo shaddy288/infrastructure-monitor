@@ -214,7 +214,7 @@ export default function NocMonitor() {
           </div>
 
           {/* 8-per-row city grid — worst stations (most Down, then Latency) show first */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 2xl:grid-cols-10 gap-2 lg:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 2xl:grid-cols-8 gap-2 lg:gap-3">
             {filteredStations.length > 0 ? (
               filteredStations.map((city) => (
                 <CityCard key={city.name} city={city} onLink={onCityLink} />

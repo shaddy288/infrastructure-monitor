@@ -1,75 +1,100 @@
-import { useState, useEffect, useMemo, useCallback } from "react"
-import { LINK_META, REGIONS, STATUS_FILTERS, getLinkStatus } from "./data"
-import { fetchTelemetrySummary, fetchCategoryMetrics, fetchStations, fetchLiveAlerts, fetchAvailableDates, subscribeToAlertStream } from "./api"
-import { AlertsPanel } from "./AlertsPanel"
-import { AlertsToggle } from "./AlertsToggle"
-import { MetricCard } from "./MetricCard"
-import { CityCard } from "./CityCard"
-import { Modal } from "./Modal"
-import { CalendarBtn } from "./CalendarBtn"
-import { Dropdown, GlobeIcon, ActivityIcon } from "./Dropdown"
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { LINK_META, REGIONS, STATUS_FILTERS, getLinkStatus } from "./data";
+import {
+  fetchTelemetrySummary,
+  fetchCategoryMetrics,
+  fetchStations,
+  fetchLiveAlerts,
+  fetchAvailableDates,
+  subscribeToAlertStream,
+} from "./api";
+import { AlertsPanel } from "./AlertsPanel";
+import { AlertsToggle } from "./AlertsToggle";
+import { MetricCard } from "./MetricCard";
+import { CityCard } from "./CityCard";
+import { Modal } from "./Modal";
+import { CalendarBtn } from "./CalendarBtn";
+import { Dropdown, GlobeIcon, ActivityIcon } from "./Dropdown";
 
 export default function NocMonitor() {
-  const [alertsOpen, setAlertsOpen] = useState(false)
-  const [alerts, setAlerts] = useState([])
-  const [summary, setSummary] = useState({ totalStations: 0, upLinks: 0, downLinks: 0, healthPercentage: 100 })
-  const [metrics, setMetrics] = useState([])
-  const [allStations, setAllStations] = useState([])
-  const [availableDateInfo, setAvailableDateInfo] = useState(null)
-  const [modal, setModal] = useState(null)
-  const [activeCard, setActiveCard] = useState(null)
-  const [regionFilter, setRegionFilter] = useState("All Regions")
-  const [statusFilter, setStatusFilter] = useState("All Status")
-  const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [alerts, setAlerts] = useState([]);
+  const [summary, setSummary] = useState({
+    totalStations: 0,
+    upLinks: 0,
+    downLinks: 0,
+    healthPercentage: 100,
+  });
+  const [metrics, setMetrics] = useState([]);
+  const [allStations, setAllStations] = useState([]);
+  const [availableDateInfo, setAvailableDateInfo] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [activeCard, setActiveCard] = useState(null);
+  const [regionFilter, setRegionFilter] = useState("All Regions");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Load initial data once from server
   const loadInitialData = useCallback(async () => {
-    setError(null)
-    setLoading(true)
+    setError(null);
+    setLoading(true);
     try {
-      const [sumData, metData, altData, stnData, datesData] = await Promise.all([
-        fetchTelemetrySummary(),
-        fetchCategoryMetrics(),
-        fetchLiveAlerts(),
-        fetchStations("All Regions", "All Status"),
-        fetchAvailableDates(),
-      ])
-      setSummary(sumData)
-      setMetrics(metData)
-      setAlerts(altData)
-      setAllStations(stnData)
-      setAvailableDateInfo(datesData)
+      const [sumData, metData, altData, stnData, datesData] = await Promise.all(
+        [
+          fetchTelemetrySummary(),
+          fetchCategoryMetrics(),
+          fetchLiveAlerts(),
+          fetchStations("All Regions", "All Status"),
+          fetchAvailableDates(),
+        ],
+      );
+      setSummary(sumData);
+      setMetrics(metData);
+      setAlerts(altData);
+      setAllStations(stnData);
+      setAvailableDateInfo(datesData);
     } catch (err) {
-      console.error("NOC Server Connection Error:", err)
-      setError("Unable to connect to NOC Backend Server (http://localhost:5000). Please check if the server is running.")
+      console.error("NOC Server Connection Error:", err);
+      setError(
+        "Unable to connect to NOC Backend Server (http://localhost:5000). Please check if the server is running.",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    loadInitialData()
-  }, [loadInitialData])
+    loadInitialData();
+  }, [loadInitialData]);
 
   // Instant in-memory filtering without API calls
   const filteredStations = useMemo(() => {
     return allStations.filter((s) => {
       // 1. Region filter
-      if (regionFilter !== "All Regions" && s.region !== regionFilter) return false;
+      if (regionFilter !== "All Regions" && s.region !== regionFilter)
+        return false;
 
       // 2. Status filter
       if (statusFilter === "Down") {
-        return Object.values(s.links || {}).some((l) => l && getLinkStatus(l) === "down");
+        return Object.values(s.links || {}).some(
+          (l) => l && getLinkStatus(l) === "down",
+        );
       }
       if (statusFilter === "Degraded") {
-        return Object.values(s.links || {}).some((l) => l && getLinkStatus(l) === "degraded");
+        return Object.values(s.links || {}).some(
+          (l) => l && getLinkStatus(l) === "degraded",
+        );
       }
       if (statusFilter === "Latency") {
-        return Object.values(s.links || {}).some((l) => l && getLinkStatus(l) === "latency");
+        return Object.values(s.links || {}).some(
+          (l) => l && getLinkStatus(l) === "latency",
+        );
       }
       if (statusFilter === "Unmonitored") {
-        return Object.values(s.links || {}).some((l) => l && getLinkStatus(l) === "unmonitored");
+        return Object.values(s.links || {}).some(
+          (l) => l && getLinkStatus(l) === "unmonitored",
+        );
       }
       if (statusFilter === "Up") {
         // Station is UP if NO links are down, degraded, or latency
@@ -86,95 +111,114 @@ export default function NocMonitor() {
   useEffect(() => {
     const unsubscribe = subscribeToAlertStream({
       onAlert: (newAlert) => {
-        setAlerts((prev) => [newAlert, ...prev.slice(0, 49)])
+        setAlerts((prev) => [newAlert, ...prev.slice(0, 49)]);
       },
       onSnapshot: (data) => {
-        if (data.summary) setSummary(data.summary)
-        if (data.categories) setMetrics(data.categories)
-        if (data.stations) setAllStations(data.stations)
+        if (data.summary) setSummary(data.summary);
+        if (data.categories) setMetrics(data.categories);
+        if (data.stations) setAllStations(data.stations);
       },
       onTelemetryUpdate: (data) => {
-        if (data.summary) setSummary(data.summary)
-        if (data.categories) setMetrics(data.categories)
+        if (data.summary) setSummary(data.summary);
+        if (data.categories) setMetrics(data.categories);
       },
       onStationsUpdate: (newStations) => {
-        if (newStations) setAllStations(newStations)
+        if (newStations) setAllStations(newStations);
       },
-    })
-    return () => unsubscribe()
-  }, [])
-
-
+    });
+    return () => unsubscribe();
+  }, []);
 
   function onCardTab(key, tab) {
     if (activeCard?.key === key && activeCard?.tab === tab) {
-      setActiveCard(null); setModal(null)
+      setActiveCard(null);
+      setModal(null);
     } else {
-      setActiveCard({ key, tab })
-      setModal({ kind: "card", linkKey: key, tab })
+      setActiveCard({ key, tab });
+      setModal({ kind: "card", linkKey: key, tab });
     }
   }
 
   function onCityLink(city, key) {
-    setModal({ kind: "cityLink", city: city.name, linkKey: key, cityData: city })
-    setActiveCard(null)
+    setModal({
+      kind: "cityLink",
+      city: city.name,
+      linkKey: key,
+      cityData: city,
+    });
+    setActiveCard(null);
   }
 
-
-  const downCount = summary.downLinks > 0
-    ? summary.downLinks
-    : (alerts.unreadDownCount || alerts.filter((a) => a.status === "down").length)
+  const downCount =
+    summary.downLinks > 0
+      ? summary.downLinks
+      : alerts.unreadDownCount ||
+        alerts.filter((a) => a.status === "down").length;
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F8F9FA] font-sans">
-
       {/* ── Main content ── */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-
         {/* Header */}
         <header className="bg-white border-b border-slate-200 shadow-sm flex-shrink-0">
-          <div className="px-5 py-2.5 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="relative px-15 py-10 flex items-center justify-end gap-4">
+            {/* Center: Logo + Infrastructure Monitor text */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://www.radiocity.in/rc-new/images/RC-logonew.png"
                 alt="Radio City"
-                className="h-7 w-auto object-contain"
-                onError={(e) => { e.currentTarget.style.display = "none" }}
+                className="h-17 w-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
               />
-              <span className="w-px h-5 bg-slate-200" />
               <div>
-                <p className="text-sm font-bold text-[#0F172A] leading-tight">Infrastructure Monitor</p>
-                <p className="text-[10px] text-slate-400">NOC Wallboard · PAN-India · {summary.totalStations} Stations</p>
+                <p className="text-[20px] text-sm font-bold text-[#0F172A] leading-tight">
+                  Infrastructure Monitor
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  NOC Wallboard · PAN-India · {summary.totalStations} Stations
+                </p>
               </div>
             </div>
 
+            {/* Right: Status badges */}
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{summary.upLinks} Up
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {summary.upLinks} Up
               </span>
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 border border-red-100 text-[11px] font-bold text-red-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />{summary.downLinks} Down
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                {summary.downLinks} Down
               </span>
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold bg-emerald-50 border-emerald-100 text-emerald-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{summary.healthPercentage}% Healthy
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {summary.healthPercentage}% Healthy
               </span>
-              <CalendarBtn stations={filteredStations} alerts={alerts} availableDateInfo={availableDateInfo} />
-
+              <CalendarBtn
+                stations={filteredStations}
+                alerts={alerts}
+                availableDateInfo={availableDateInfo}
+              />
             </div>
           </div>
         </header>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-
+        <div className="flex-1 overflow-y-auto px-15 py-4 space-y-4">
           {/* Server Error Alert Banner */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between gap-4 shadow-sm animate-[fadeDown_150ms_ease-out]">
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 font-bold">⚠️</span>
+                <span className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 font-bold">
+                  ⚠️
+                </span>
                 <div>
-                  <p className="text-xs font-bold text-red-800">Backend Server Error</p>
+                  <p className="text-xs font-bold text-red-800">
+                    Backend Server Error
+                  </p>
                   <p className="text-xs text-red-600">{error}</p>
                 </div>
               </div>
@@ -208,8 +252,18 @@ export default function NocMonitor() {
 
             {/* Region + Status filters, worst-first sorted results */}
             <div className="flex items-center gap-2">
-              <Dropdown icon={<GlobeIcon />} options={REGIONS} value={regionFilter} onChange={setRegionFilter} />
-              <Dropdown icon={<ActivityIcon />} options={STATUS_FILTERS} value={statusFilter} onChange={setStatusFilter} />
+              <Dropdown
+                icon={<GlobeIcon />}
+                options={REGIONS}
+                value={regionFilter}
+                onChange={setRegionFilter}
+              />
+              <Dropdown
+                icon={<ActivityIcon />}
+                options={STATUS_FILTERS}
+                value={statusFilter}
+                onChange={setStatusFilter}
+              />
             </div>
           </div>
 
@@ -221,22 +275,35 @@ export default function NocMonitor() {
               ))
             ) : (
               <div className="col-span-8 py-10 text-center text-sm text-slate-400">
-                {loading ? "Loading data from backend server..." : "No stations match this filter."}
+                {loading
+                  ? "Loading data from backend server..."
+                  : "No stations match this filter."}
               </div>
             )}
           </div>
         </div>
       </div>
 
-
       {/* ── Collapsible alerts panel (right side) ── */}
       <AlertsPanel alerts={alerts} open={alertsOpen} downCount={downCount} />
 
       {/* ── Right alerts toggle tab ── */}
-      <AlertsToggle open={alertsOpen} count={downCount} onClick={() => setAlertsOpen((o) => !o)} />
+      <AlertsToggle
+        open={alertsOpen}
+        count={downCount}
+        onClick={() => setAlertsOpen((o) => !o)}
+      />
 
       {/* Modal */}
-      {modal && <Modal target={modal} onClose={() => { setModal(null); setActiveCard(null) }} />}
+      {modal && (
+        <Modal
+          target={modal}
+          onClose={() => {
+            setModal(null);
+            setActiveCard(null);
+          }}
+        />
+      )}
 
       <style>{`
         @keyframes fadeDown {
@@ -249,5 +316,5 @@ export default function NocMonitor() {
         }
       `}</style>
     </div>
-  )
+  );
 }

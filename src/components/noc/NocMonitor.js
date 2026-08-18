@@ -168,7 +168,7 @@ export default function NocMonitor() {
               <img
                 src="https://www.radiocity.in/rc-new/images/RC-logonew.png"
                 alt="Radio City"
-                className="h-17 w-auto object-contain"
+                className="h-20 w-auto object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = "none";
                 }}
@@ -177,7 +177,7 @@ export default function NocMonitor() {
                 <p className="text-[20px] text-sm font-bold text-[#0F172A] leading-tight">
                   Infrastructure Monitor
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[13px] font-bold text-[#0F172A]">
                   NOC Wallboard · PAN-India · {summary.totalStations} Stations
                 </p>
               </div>

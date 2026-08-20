@@ -31,9 +31,13 @@ export function MetricCard({ stat, activeTab, onTab }) {
 
         {/* Status badges */}
         <div className="flex items-center gap-1.5">
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700">
+          <button
+            onClick={() => onTab("up")}
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer transition-all
+              ${activeTab === "up" ? "bg-emerald-500 text-white shadow-sm" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}
+          >
             <Dot s="up" /><span className="text-[11px] font-extrabold">UP {stat.up}</span>
-          </div>
+          </button>
           <button
             onClick={() => onTab("down")}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer transition-all

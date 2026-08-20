@@ -137,12 +137,12 @@ export function Modal({ target, onClose }) {
         {/* Modal header */}
         <div className="flex items-center justify-between px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
           <div className="flex items-center gap-2.5">
-            <div
+            {/* <div
               className="w-7 h-7 lg:w-9 lg:h-9 rounded-lg flex items-center justify-center text-[20px] lg:text-2xl font-black text-white"
               style={{ backgroundColor: meta.color }}
             >
               {meta.short}
-            </div>
+            </div> */}
             <div>
               <p className="text-sm sm:text-base lg:text-lg font-extrabold text-slate-800">{title || "Loading..."}</p>
               <p className="text-[10px] sm:text-xs lg:text-sm text-slate-500 mt-px font-semibold">{subtitle}</p>

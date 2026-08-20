@@ -32,6 +32,7 @@ export default function NocMonitor() {
   const [activeCard, setActiveCard] = useState(null);
   const [regionFilter, setRegionFilter] = useState("All Regions");
   const [statusFilter, setStatusFilter] = useState("All Status");
+  const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,6 +72,13 @@ export default function NocMonitor() {
   // Instant in-memory filtering without API calls
   const filteredStations = useMemo(() => {
     return allStations.filter((s) => {
+      // 0. Search filter (by station name)
+      if (
+        searchQuery.trim() &&
+        !s.name?.toLowerCase().includes(searchQuery.trim().toLowerCase())
+      )
+        return false;
+
       // 1. Region filter
       if (regionFilter !== "All Regions" && s.region !== regionFilter)
         return false;
@@ -97,7 +105,6 @@ export default function NocMonitor() {
         );
       }
       if (statusFilter === "Up") {
-        // Station is UP if NO links are down, degraded, or latency
         return !Object.values(s.links || {}).some((l) => {
           const st = getLinkStatus(l);
           return st === "down" || st === "degraded" || st === "latency";
@@ -105,7 +112,7 @@ export default function NocMonitor() {
       }
       return true;
     });
-  }, [allStations, regionFilter, statusFilter]);
+  }, [allStations, regionFilter, statusFilter, searchQuery]);
 
   // Subscribe to live WebSocket alerts & telemetry stream
   useEffect(() => {
@@ -149,6 +156,17 @@ export default function NocMonitor() {
     setActiveCard(null);
   }
 
+  // Overall Up/Down badge click — opens the same report Modal
+  function onSummaryTab(tab) {
+    if (activeCard?.key === "summary" && activeCard?.tab === tab) {
+      setActiveCard(null);
+      setModal(null);
+    } else {
+      setActiveCard({ key: "summary", tab });
+      setModal({ kind: "card", linkKey: "all", tab });
+    }
+  }
+
   const downCount =
     summary.downLinks > 0
       ? summary.downLinks
@@ -161,7 +179,26 @@ export default function NocMonitor() {
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="bg-white border-b border-slate-200 shadow-sm flex-shrink-0">
-          <div className="relative px-15 py-10 flex items-center justify-end gap-4">
+          <div className="relative px-15 py-10 flex items-center justify-between gap-4">
+            {/* Left: Search bar */}
+            <div className="relative w-100 flex-shrink-0">
+              <svg
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search station..."
+                className="w-full pl-8 pr-3 py-1.5 text-xs sm:text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 transition-all"
+              />
+            </div>
+
             {/* Center: Logo + Infrastructure Monitor text */}
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -183,16 +220,32 @@ export default function NocMonitor() {
               </div>
             </div>
 
-            {/* Right: Status badges */}
+            {/* Right: Status badges (clickable now) */}
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <button
+                onClick={() => onSummaryTab("up")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer
+                  ${
+                    activeCard?.key === "summary" && activeCard?.tab === "up"
+                      ? "bg-emerald-500 text-white border-emerald-500 shadow-sm"
+                      : "bg-emerald-50 border-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                  }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
                 {summary.upLinks} Up
-              </span>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 border border-red-100 text-[11px] font-bold text-red-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              </button>
+              <button
+                onClick={() => onSummaryTab("down")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer
+                  ${
+                    activeCard?.key === "summary" && activeCard?.tab === "down"
+                      ? "bg-red-500 text-white border-red-500 shadow-sm"
+                      : "bg-red-50 border-red-100 text-red-600 hover:bg-red-100"
+                  }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                 {summary.downLinks} Down
-              </span>
+              </button>
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold bg-emerald-50 border-emerald-100 text-emerald-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 {summary.healthPercentage}% Healthy

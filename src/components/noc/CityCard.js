@@ -62,7 +62,7 @@ export function CityCard({ city, onLink }) {
                 style={{ backgroundColor: S_COLOR[status] || "#64748B" }}
               />
               <span
-                className={`text-[10px] sm:text-xs lg:text-sm xl:text-base flex-1 text-left truncate
+                className={`text-[10px] sm:text-xs lg:text-sm flex-1 text-left truncate
                 ${status === "down" ? "text-red-600 font-bold" : status === "degraded" ? "text-orange-600 font-bold" : status === "latency" ? "text-amber-600 font-bold" : status === "unmonitored" ? "text-slate-400 italic font-semibold" : "text-slate-500 font-bold"}
                 group-hover:text-slate-700`}
               >
